@@ -3,21 +3,31 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRonStore } from "@/lib/store";
-import { formatCurrency, formatCompactNumber } from "@/lib/utils";
+import { formatCurrency, formatCompactNumber, formatNumber } from "@/lib/utils";
 import { Button } from "../ui/Button";
-import { ArrowRight, Activity } from "lucide-react";
+import {
+  ArrowRight,
+  Activity,
+  ShieldCheck,
+  Zap,
+  Radio,
+  Cpu,
+  Terminal,
+  Layers,
+  Sparkles,
+} from "lucide-react";
 
 const PROTOCOL_ORBITS = [
-  { name: "LIQUIDITY", color: "#755CFF", angle: 0, radius: 175 },
-  { name: "STAKING", color: "#00DFF7", angle: 50, radius: 200 },
-  { name: "GOVERNANCE", color: "#9DFF57", angle: 110, radius: 165 },
-  { name: "VALIDATORS", color: "#755CFF", angle: 170, radius: 215 },
-  { name: "AI COGNITION", color: "#00DFF7", angle: 230, radius: 185 },
-  { name: "ZK RELAY", color: "#9DFF57", angle: 295, radius: 195 },
+  { name: "LIQUIDITY AMM", color: "#7A5CFF", angle: 0, radius: 195, status: "OPTIMAL" },
+  { name: "STAKING VAULT", color: "#00E7FF", angle: 60, radius: 220, status: "18.42% APY" },
+  { name: "DAO SENATE", color: "#96FF4B", angle: 120, radius: 180, status: "ACTIVE" },
+  { name: "VALIDATOR HUBS", color: "#7A5CFF", angle: 180, radius: 240, status: "184 SYNCED" },
+  { name: "NEURAL PROVER", color: "#00E7FF", angle: 240, radius: 205, status: "COGNITIVE" },
+  { name: "ZK RELAY MESH", color: "#96FF4B", angle: 300, radius: 215, status: "SUB-SECOND" },
 ];
 
 export const Scene01Core: React.FC = () => {
-  const { metrics, setWalletModalOpen } = useRonStore();
+  const { metrics, setWalletModalOpen, blocks, transactions } = useRonStore();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
   const scrollRef = useRef(0);
@@ -29,8 +39,8 @@ export const Scene01Core: React.FC = () => {
     if (!ctx) return;
 
     let animationFrameId: number;
-    let width = (canvas.width = canvas.parentElement?.clientWidth || 900);
-    let height = (canvas.height = canvas.parentElement?.clientHeight || 650);
+    let width = (canvas.width = canvas.parentElement?.clientWidth || 1000);
+    let height = (canvas.height = canvas.parentElement?.clientHeight || 720);
 
     const handleResize = () => {
       if (!canvas.parentElement) return;
@@ -65,7 +75,7 @@ export const Scene01Core: React.FC = () => {
 
     // Responsive 3D Particle Cloud
     const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-    const PARTICLE_COUNT = isMobile ? 60 : 160;
+    const PARTICLE_COUNT = isMobile ? 80 : 220;
     const particles: Array<{
       baseX: number;
       baseY: number;
@@ -73,14 +83,15 @@ export const Scene01Core: React.FC = () => {
       radius: number;
       color: string;
       alpha: number;
+      speed: number;
     }> = [];
 
-    const palette = ["#755CFF", "#00DFF7", "#9DFF57", "#FFFFFF"];
+    const palette = ["#7A5CFF", "#00E7FF", "#96FF4B", "#FFFFFF", "#FF4FD8"];
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
-      const r = 100 + Math.random() * 50;
+      const r = 110 + Math.random() * 70;
 
       const x = r * Math.sin(phi) * Math.cos(theta);
       const y = r * Math.sin(phi) * Math.sin(theta);
@@ -90,128 +101,143 @@ export const Scene01Core: React.FC = () => {
         baseX: x,
         baseY: y,
         baseZ: z,
-        radius: Math.random() * 1.8 + 0.8,
+        radius: Math.random() * 2 + 0.8,
         color: palette[Math.floor(Math.random() * palette.length)],
-        alpha: Math.random() * 0.6 + 0.3,
+        alpha: Math.random() * 0.7 + 0.3,
+        speed: (Math.random() - 0.5) * 0.02,
       });
     }
 
-    let angleY = 0;
-    let angleX = 0;
+    let time = 0;
 
     const render = () => {
-      // Damped physical inertia
+      time += 0.012;
+
+      // Smooth camera interpolation
       mouseRef.current.x += (mouseRef.current.targetX - mouseRef.current.x) * 0.05;
       mouseRef.current.y += (mouseRef.current.targetY - mouseRef.current.y) * 0.05;
-
-      angleY += 0.007 + mouseRef.current.x * 0.008;
-      angleX = mouseRef.current.y * 0.25;
 
       ctx.clearRect(0, 0, width, height);
 
       const cx = width / 2;
-      const cy = height / 2;
+      const cy = height / 2 - 10;
+      const scrollOffset = scrollRef.current * 0.15;
 
-      // Scroll expansion factor
-      const scrollFactor = Math.min(1.5, 1 + (scrollRef.current / 800) * 0.4);
+      const rotY = time * 0.3 + mouseRef.current.x * 0.6;
+      const rotX = mouseRef.current.y * 0.4 + scrollOffset * 0.002;
 
-      // Soft volumetric background glow
-      const radialGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 260 * scrollFactor);
-      radialGrad.addColorStop(0, "rgba(117, 92, 255, 0.18)");
-      radialGrad.addColorStop(0.5, "rgba(0, 223, 247, 0.05)");
-      radialGrad.addColorStop(1, "rgba(5, 5, 7, 0)");
-      ctx.fillStyle = radialGrad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 270 * scrollFactor, 0, Math.PI * 2);
-      ctx.fill();
+      // 1. Draw Volumetric Holographic Backdrop Glow
+      const bgGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 320);
+      bgGrad.addColorStop(0, "rgba(122, 92, 255, 0.22)");
+      bgGrad.addColorStop(0.35, "rgba(0, 231, 255, 0.08)");
+      bgGrad.addColorStop(0.7, "rgba(150, 255, 75, 0.02)");
+      bgGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, width, height);
 
-      // Precision Vector Rings
-      const ringRadii = [150 * scrollFactor, 190 * scrollFactor, 230 * scrollFactor];
-      const ringRots = [angleY * 0.5, -angleY * 0.35, angleY * 0.7];
+      // 2. Multi-Layered Gyroscopic Orbit Rings
+      const rings = [
+        { r: 230, tilt: 0.45, speed: 0.25, color: "rgba(122, 92, 255, 0.25)", dash: [6, 12] },
+        { r: 190, tilt: -0.35, speed: -0.35, color: "rgba(0, 231, 255, 0.35)", dash: [10, 8] },
+        { r: 150, tilt: 0.65, speed: 0.5, color: "rgba(150, 255, 75, 0.3)", dash: [4, 6] },
+      ];
 
-      ringRadii.forEach((r, idx) => {
+      rings.forEach((ring) => {
         ctx.save();
         ctx.translate(cx, cy);
-        ctx.rotate(ringRots[idx] + angleX);
-        ctx.scale(1, 0.38);
+        ctx.rotate(time * ring.speed + mouseRef.current.x * 0.2);
+        ctx.scale(1, Math.cos(ring.tilt));
         ctx.beginPath();
-        ctx.arc(0, 0, r, 0, Math.PI * 2);
-        ctx.strokeStyle = idx === 0 ? "rgba(117, 92, 255, 0.3)" : idx === 1 ? "rgba(0, 223, 247, 0.2)" : "rgba(157, 255, 87, 0.15)";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([8, 14]);
+        ctx.arc(0, 0, ring.r, 0, Math.PI * 2);
+        ctx.strokeStyle = ring.color;
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash(ring.dash);
         ctx.stroke();
         ctx.restore();
       });
 
-      // 3D Particles Projection
-      const cosY = Math.cos(angleY);
-      const sinY = Math.sin(angleY);
-      const cosX = Math.cos(angleX);
-      const sinX = Math.sin(angleX);
-
-      particles.sort((a, b) => b.baseZ - a.baseZ);
+      // 3. 3D Particle Cloud Projection
+      const cosY = Math.cos(rotY);
+      const sinY = Math.sin(rotY);
+      const cosX = Math.cos(rotX);
+      const sinX = Math.sin(rotX);
 
       particles.forEach((p) => {
+        // Rotate around Y
         const x1 = p.baseX * cosY - p.baseZ * sinY;
         const z1 = p.baseZ * cosY + p.baseX * sinY;
+
+        // Rotate around X
         const y1 = p.baseY * cosX - z1 * sinX;
         const z2 = z1 * cosX + p.baseY * sinX;
 
-        const fov = 380;
+        // Perspective projection
+        const fov = 420;
         const scale = fov / (fov + z2);
-        const px = cx + x1 * scale * scrollFactor;
-        const py = cy + y1 * scale * scrollFactor;
 
-        ctx.beginPath();
-        ctx.arc(px, py, p.radius * scale, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = Math.max(0.1, Math.min(0.9, p.alpha * scale));
-        ctx.fill();
+        const projX = cx + x1 * scale;
+        const projY = cy + y1 * scale;
+
+        if (z2 > -fov) {
+          const depthAlpha = Math.max(0.1, Math.min(1, (z2 + 200) / 400)) * p.alpha;
+          ctx.beginPath();
+          ctx.arc(projX, projY, Math.max(0.5, p.radius * scale), 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = depthAlpha;
+          ctx.fill();
+        }
       });
-
       ctx.globalAlpha = 1;
 
-      // Central Digital Engine Hub
-      ctx.beginPath();
-      ctx.arc(cx, cy, 36, 0, Math.PI * 2);
-      ctx.fillStyle = "#090A0E";
-      ctx.strokeStyle = "#755CFF";
-      ctx.lineWidth = 1.5;
-      ctx.shadowColor = "#755CFF";
-      ctx.shadowBlur = 24;
-      ctx.fill();
-      ctx.stroke();
-      ctx.shadowBlur = 0;
+      // 4. Central Reactor Nucleus with Pulsing Energy
+      const corePulse = Math.sin(time * 3) * 6;
+      const coreR = Math.max(24, 38 + corePulse);
 
-      // Core Monospace Symbol
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 13px monospace";
+      const coreGrad = ctx.createRadialGradient(cx, cy, 2, cx, cy, coreR);
+      coreGrad.addColorStop(0, "#FFFFFF");
+      coreGrad.addColorStop(0.3, "#00E7FF");
+      coreGrad.addColorStop(0.7, "#7A5CFF");
+      coreGrad.addColorStop(1, "transparent");
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
+      ctx.fillStyle = coreGrad;
+      ctx.fill();
+
+      // Nucleus Symbol Glyph (R)
+      ctx.fillStyle = "#04050A";
+      ctx.font = "900 20px -apple-system, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("RON", cx, cy);
+      ctx.fillText("R", cx, cy);
 
-      // Orbiting Subsystem Protocol Tags
-      PROTOCOL_ORBITS.forEach((sys) => {
-        const rad = ((sys.angle + angleY * 26) * Math.PI) / 180;
-        const ox = cx + Math.cos(rad) * sys.radius * scrollFactor;
-        const oy = cy + Math.sin(rad) * (sys.radius * 0.38) * scrollFactor + mouseRef.current.y * 12;
+      // 5. Orbiting Protocol HUD Nodes
+      PROTOCOL_ORBITS.forEach((sys, idx) => {
+        const orbitAngle = ((sys.angle + time * 18) * Math.PI) / 180;
+        const ox = cx + Math.cos(orbitAngle) * sys.radius;
+        const oy = cy + Math.sin(orbitAngle) * (sys.radius * 0.45);
 
-        ctx.fillStyle = "rgba(5, 5, 7, 0.9)";
-        ctx.strokeStyle = sys.color;
-        ctx.lineWidth = 0.8;
-
-        const tw = ctx.measureText(sys.name).width;
-        const pw = tw + 14;
-        const ph = 18;
-
+        // Connection beam from nucleus to node
         ctx.beginPath();
-        ctx.roundRect(ox - pw / 2, oy - ph / 2, pw, ph, 3);
-        ctx.fill();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(ox, oy);
+        ctx.strokeStyle = "rgba(122, 92, 255, 0.12)";
+        ctx.lineWidth = 0.8;
         ctx.stroke();
 
+        // Node Beacon Dot
+        ctx.beginPath();
+        ctx.arc(ox, oy, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = sys.color;
+        ctx.shadowColor = sys.color;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Micro Data Tag
         ctx.fillStyle = sys.color;
         ctx.font = "bold 8.5px monospace";
-        ctx.fillText(sys.name, ox, oy);
+        ctx.fillText(sys.name, ox, oy - 8);
       });
 
       animationFrameId = requestAnimationFrame(render);
@@ -229,45 +255,52 @@ export const Scene01Core: React.FC = () => {
   }, []);
 
   return (
-    <section className="relative min-h-[94vh] flex flex-col justify-between items-center text-center px-4 sm:px-6 lg:px-8 pt-16 pb-20 overflow-hidden bg-radial-glow">
-      {/* 3D Canvas Background & Digital Engine Core */}
-      <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none" data-cursor="explore">
-        <canvas ref={canvasRef} className="w-full h-full max-w-5xl" />
+    <section className="relative min-h-[96vh] flex flex-col justify-between items-center text-center px-4 sm:px-6 lg:px-8 pt-12 pb-16 overflow-hidden bg-radial-glow">
+      {/* 3D Holographic Reactor Canvas */}
+      <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
+        <canvas ref={canvasRef} className="w-full h-full max-w-6xl" />
       </div>
 
-      {/* Hero Headline & Strategic Text Hierarchy */}
-      <div className="relative z-10 max-w-5xl mx-auto space-y-6 pt-6">
-        {/* Micro Telemetry Header */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[3px] bg-ron-violet/[0.08] border border-ron-violet/30 backdrop-blur-md">
-          <span className="w-1.5 h-1.5 rounded-full bg-ron-cyan animate-pulse" />
-          <span className="font-mono text-[10px] text-ron-cyan uppercase tracking-[0.2em] font-semibold">
-            PROGRAMMABLE ECONOMIC INFRASTRUCTURE • MAINNET V2.4
+      {/* Cyber Grid Horizon Overlay */}
+      <div className="absolute inset-0 bg-cyber-void opacity-40 pointer-events-none" />
+      <div className="absolute inset-0 cyber-scanlines pointer-events-none opacity-60" />
+
+      {/* Top Protocol Status Banner */}
+      <div className="relative z-10 pt-2">
+        <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-[4px] bg-[#070913]/90 border border-ron-cyan/40 backdrop-blur-xl shadow-[0_0_20px_rgba(0,231,255,0.15)]">
+          <span className="w-2 h-2 rounded-full bg-ron-green animate-pulse" />
+          <span className="font-mono text-[10.5px] text-white uppercase tracking-[0.2em] font-bold">
+            RON PROTOCOL ENGINE V2.4 • MAINNET CONVERGENCE
           </span>
         </div>
+      </div>
 
-        {/* Grand Editorial Display Title */}
-        <div className="space-y-3">
-          <h1 className="text-6xl sm:text-8xl lg:text-[110px] font-black tracking-[-0.03em] text-white leading-none">
+      {/* Main Command Chamber Center Piece */}
+      <div className="relative z-10 max-w-5xl mx-auto space-y-6 pt-4">
+        {/* Grand Cyber Title */}
+        <div className="space-y-2">
+          <h1 className="text-6xl sm:text-8xl lg:text-[112px] font-black tracking-[-0.04em] text-white leading-none drop-shadow-[0_0_35px_rgba(122,92,255,0.35)]">
             RON
           </h1>
-          <p className="font-mono text-sm sm:text-base lg:text-lg uppercase tracking-[0.25em] text-ron-text font-bold">
+          <p className="font-mono text-sm sm:text-base lg:text-lg uppercase tracking-[0.3em] text-ron-cyan font-bold">
             THE PROGRAMMABLE ECONOMY
           </p>
         </div>
 
         <p className="text-xs sm:text-sm text-ron-muted max-w-xl mx-auto leading-relaxed font-sans">
-          One Token. Infinite Utility. An intelligent, sub-second settlement infrastructure
-          engineered for global value transfer and autonomous execution.
+          One Token. Infinite Utility. An intelligent, sub-second settlement digital economic infrastructure
+          engineered for global value routing and autonomous on-chain execution.
         </p>
 
-        {/* High-Contrast Action Triggers with Magnetic Interaction */}
+        {/* High-Impact Tactical CTA Array */}
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <Button
             size="lg"
             variant="primary"
             isMagnetic={true}
             onClick={() => setWalletModalOpen(true)}
-            rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+            rightIcon={<ArrowRight className="w-4 h-4 text-black" />}
+            className="h-12 px-6 font-mono text-xs tracking-wider shadow-[0_0_25px_rgba(0,231,255,0.4)]"
           >
             ENTER NETWORK
           </Button>
@@ -277,20 +310,62 @@ export const Scene01Core: React.FC = () => {
               size="lg"
               variant="secondary"
               isMagnetic={true}
-              leftIcon={<Activity className="w-3.5 h-3.5 text-ron-cyan" />}
+              leftIcon={<Activity className="w-4 h-4 text-ron-cyan" />}
+              className="h-12 px-6 font-mono text-xs tracking-wider hover:border-ron-cyan"
             >
-              VIEW EXPLORER
+              EXPLORE LEDGER
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* Live System Metrics Strip */}
-      <div className="relative z-10 w-full max-w-6xl mx-auto mt-16">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 p-2 rounded-[6px] bg-black/60 border border-white/[0.08] backdrop-blur-xl">
+      {/* Flanking Cyber HUD Telemetry Panels (Desktop / Tablet) */}
+      <div className="relative z-10 w-full max-w-[1380px] mx-auto hidden xl:grid grid-cols-12 gap-4 mt-8">
+        {/* Left HUD: Node Enclave */}
+        <div className="col-span-3 p-3.5 rounded-[6px] cyber-hud-card tech-corner-tl text-left space-y-2">
+          <div className="flex items-center justify-between border-b border-white/[0.08] pb-1.5">
+            <span className="mono-label text-[9px] text-ron-cyan font-bold">NODE ENCLAVE</span>
+            <span className="text-ron-green text-[9px] font-mono">ONLINE</span>
+          </div>
+          <div className="space-y-1 text-[11px] font-mono">
+            <div className="flex justify-between">
+              <span className="text-ron-dim">BLOCK HEIGHT:</span>
+              <span className="text-white font-bold mono-data">#{metrics.blockHeight.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-ron-dim">SLOT FINALITY:</span>
+              <span className="text-ron-green font-bold mono-data">0.42s SUB-SECOND</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-span-6" />
+
+        {/* Right HUD: Defense & Throughput */}
+        <div className="col-span-3 p-3.5 rounded-[6px] cyber-hud-card tech-corner-br text-left space-y-2">
+          <div className="flex items-center justify-between border-b border-white/[0.08] pb-1.5">
+            <span className="mono-label text-[9px] text-ron-violet font-bold">SHIELD & THROUGHPUT</span>
+            <span className="text-ron-cyan text-[9px] font-mono">ZK-PROVER</span>
+          </div>
+          <div className="space-y-1 text-[11px] font-mono">
+            <div className="flex justify-between">
+              <span className="text-ron-dim">REAL-TIME TPS:</span>
+              <span className="text-ron-cyan font-bold mono-data">{metrics.currentTps.toLocaleString()} TPS</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-ron-dim">GAS TARGET:</span>
+              <span className="text-white font-bold mono-data">{metrics.avgGasGwei} GWEI ($0.08)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Cyber Console Live Telemetry Strip */}
+      <div className="relative z-10 w-full max-w-6xl mx-auto mt-6 sm:mt-10">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 p-2 rounded-[8px] bg-[#070913]/90 border border-white/[0.12] backdrop-blur-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)]">
           {/* Price */}
-          <div className="p-3 surface-type-a text-left">
-            <span className="mono-label block text-[10px]">RON PRICE</span>
+          <div className="p-3 rounded-[4px] surface-type-a text-left hover:border-ron-cyan/40 transition-colors">
+            <span className="mono-label block text-[9.5px]">RON PRICE</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="mono-data font-bold text-sm text-white">
                 {formatCurrency(metrics.ronPrice, 3)}
@@ -302,24 +377,24 @@ export const Scene01Core: React.FC = () => {
           </div>
 
           {/* Market Cap */}
-          <div className="p-3 surface-type-a text-left">
-            <span className="mono-label block text-[10px]">MARKET CAP</span>
+          <div className="p-3 rounded-[4px] surface-type-a text-left hover:border-ron-cyan/40 transition-colors">
+            <span className="mono-label block text-[9.5px]">MARKET CAP</span>
             <span className="mono-data font-bold text-sm text-white mt-0.5 block">
               ${formatCompactNumber(metrics.marketCap)}
             </span>
           </div>
 
           {/* TVL */}
-          <div className="p-3 surface-type-a text-left">
-            <span className="mono-label block text-[10px]">TOTAL TVL</span>
+          <div className="p-3 rounded-[4px] surface-type-a text-left hover:border-ron-cyan/40 transition-colors">
+            <span className="mono-label block text-[9.5px]">TOTAL TVL</span>
             <span className="mono-data font-bold text-sm text-ron-cyan mt-0.5 block">
               ${formatCompactNumber(metrics.tvl)}
             </span>
           </div>
 
           {/* TPS */}
-          <div className="p-3 surface-type-a text-left">
-            <span className="mono-label block text-[10px]">LIVE TPS</span>
+          <div className="p-3 rounded-[4px] surface-type-a text-left hover:border-ron-green/40 transition-colors">
+            <span className="mono-label block text-[9.5px]">LIVE TPS</span>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-ron-green animate-pulse" />
               <span className="mono-data font-bold text-sm text-ron-green">
@@ -329,16 +404,16 @@ export const Scene01Core: React.FC = () => {
           </div>
 
           {/* Finality */}
-          <div className="p-3 surface-type-a text-left">
-            <span className="mono-label block text-[10px]">FINALITY</span>
+          <div className="p-3 rounded-[4px] surface-type-a text-left hover:border-ron-violet/40 transition-colors">
+            <span className="mono-label block text-[9.5px]">FINALITY</span>
             <span className="mono-data font-bold text-sm text-white mt-0.5 block">
               {metrics.finalitySec} SEC
             </span>
           </div>
 
           {/* Validators */}
-          <div className="p-3 surface-type-a text-left">
-            <span className="mono-label block text-[10px]">VALIDATORS</span>
+          <div className="p-3 rounded-[4px] surface-type-a text-left hover:border-ron-violet/40 transition-colors">
+            <span className="mono-label block text-[9.5px]">VALIDATORS</span>
             <span className="mono-data font-bold text-sm text-ron-violet mt-0.5 block">
               {metrics.activeValidators} HUBS
             </span>

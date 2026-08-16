@@ -17,22 +17,28 @@ import { Scene13DevelopersHub } from "@/components/home/Scene13DevelopersHub";
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-screen bg-[#050507] text-[#F5F7FA] overflow-hidden">
-      {/* Ambient background grid pattern */}
-      <div className="fixed inset-0 bg-grid-subtle opacity-30 pointer-events-none" />
+    <div className="relative min-h-screen bg-[#04050A] text-[#F5F7FA] overflow-hidden">
+      {/* Cyber Void Ambient Horizon */}
+      <div className="fixed inset-0 bg-cyber-void opacity-50 pointer-events-none" />
+      <div className="fixed inset-0 cyber-scanlines opacity-40 pointer-events-none" />
 
       {/* Cinematic Scroll-Driven Scenes */}
       <Scene01Core />
+      <div className="w-full h-px laser-line opacity-40" />
       <Scene02NetworkAwakens />
       <Scene03WhyRon />
+      <div className="w-full h-px laser-line opacity-40" />
       <Scene04LiveVisualizer />
       <Scene05TokenFlow />
+      <div className="w-full h-px laser-line opacity-40" />
       <Scene06EcosystemUniverse />
       <Scene07SwapWidget />
       <Scene08StakeSimulation />
+      <div className="w-full h-px laser-line opacity-40" />
       <Scene09ExplorerStream />
       <Scene10IntelligenceAssistant />
       <Scene11GovernanceVotes />
+      <div className="w-full h-px laser-line opacity-40" />
       <Scene12GlobalNetworkGlobe />
       <Scene13DevelopersHub />
     </div>

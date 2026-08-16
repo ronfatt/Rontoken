@@ -31,26 +31,26 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const btnRef = useRef<HTMLButtonElement | null>(null);
 
     const baseStyles =
-      "inline-flex items-center justify-center font-mono font-medium transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-ron-violet/50 disabled:opacity-40 disabled:cursor-not-allowed select-none active:scale-[0.98] tracking-wider uppercase";
+      "relative inline-flex items-center justify-center font-mono font-bold transition-all duration-150 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed select-none active:scale-[0.97] tracking-wider uppercase";
 
     const sizeStyles = {
-      sm: "text-[11px] px-3 py-1.5 gap-1.5 rounded-[4px]",
-      md: "text-xs px-4 py-2 gap-2 rounded-[6px]",
-      lg: "text-xs px-6 py-3 gap-2.5 rounded-[6px] tracking-widest",
+      sm: "text-[10.5px] px-3 py-1.5 gap-1.5 rounded-[3px]",
+      md: "text-xs px-4 py-2.5 gap-2 rounded-[4px]",
+      lg: "text-xs px-6 py-3.5 gap-2.5 rounded-[4px] tracking-widest",
       icon: "p-2 w-8 h-8 rounded-[4px]",
     };
 
     const variantStyles = {
       primary:
-        "bg-white text-black hover:bg-[#E8EDF5] border border-white font-bold shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_25px_rgba(255,255,255,0.35)]",
+        "bg-white text-black hover:bg-[#E8EDF5] border border-white shadow-[0_0_20px_rgba(0,231,255,0.3)] hover:shadow-[0_0_30px_rgba(0,231,255,0.55)]",
       secondary:
-        "bg-ron-elevated text-ron-text hover:bg-ron-hover hover:text-white border border-white/10 hover:border-ron-violet/40",
+        "bg-[#070913] text-[#F5F7FA] hover:bg-[#0D1020] hover:text-white border border-ron-violet/40 hover:border-ron-cyan/70 shadow-[0_4px_15px_rgba(0,0,0,0.6)]",
       ghost:
         "bg-transparent text-ron-muted hover:text-white hover:bg-white/[0.04] border border-transparent",
       system:
-        "bg-black/60 text-ron-cyan border border-ron-cyan/30 hover:bg-ron-cyan/10 hover:border-ron-cyan/70 shadow-[0_0_12px_rgba(0,223,247,0.12)]",
+        "bg-[#070913] text-ron-cyan border border-ron-cyan/40 hover:bg-ron-cyan/10 hover:border-ron-cyan shadow-[0_0_15px_rgba(0,231,255,0.2)]",
       outline:
-        "bg-transparent text-ron-text border border-white/15 hover:border-white/40 hover:bg-white/[0.02]",
+        "bg-transparent text-ron-text border border-white/15 hover:border-ron-cyan/50 hover:bg-white/[0.02]",
       danger:
         "bg-ron-red/10 text-ron-red border border-ron-red/30 hover:bg-ron-red/20",
       icon: "bg-transparent text-ron-muted hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10",
