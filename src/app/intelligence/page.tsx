@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRonStore } from "@/lib/store";
 import { formatNumber, formatCurrency } from "@/lib/utils";
@@ -16,6 +17,7 @@ import {
   Radio,
   Lock,
   ArrowRight,
+  Sparkles,
 } from "lucide-react";
 
 const QUICK_CHIPS = [
@@ -132,21 +134,34 @@ export default function IntelligencePage() {
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 font-mono text-xs pb-28 sm:pb-12">
-      {/* Header Profile */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.08]">
-        <div>
-          <div className="flex items-center gap-2 text-ron-cyan text-xs font-bold mb-1">
-            <Cpu className="w-3.5 h-3.5 text-ron-green" />
-            <span className="mono-label text-[10px]">NEURAL PROTOCOL AUDITOR V2.4</span>
+      {/* Header Profile with Cyber AI Oracle Banner */}
+      <div className="surface-type-c tech-corner-tl tech-corner-br p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-2xl">
+        <div className="flex items-center gap-4">
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-[10px] overflow-hidden border-2 border-ron-violet/50 shrink-0 shadow-[0_0_25px_rgba(122,92,255,0.35)]">
+            <Image
+              src="/images/cyber_oracle.jpg"
+              alt="Cyber AI Oracle"
+              fill
+              className="object-cover"
+            />
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-white font-sans tracking-tight">
-            RON Intelligence
-          </h1>
+          <div>
+            <div className="flex items-center gap-2 text-ron-cyan text-xs font-bold mb-0.5">
+              <Cpu className="w-3.5 h-3.5 text-ron-green" />
+              <span className="mono-label text-[9.5px]">NEURAL PROTOCOL AUDITOR V2.4</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white font-sans tracking-tight">
+              RON Intelligence Core
+            </h1>
+            <p className="text-xs text-ron-muted font-sans mt-0.5">
+              ORACLE // KAIROS • Connected to 184 validator clusters with sub-second cognition.
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-[4px] bg-ron-green/10 border border-ron-green/30 text-ron-green font-bold text-xs">
           <span className="w-2 h-2 rounded-full bg-ron-green animate-pulse" />
-          <span className="text-ron-green font-bold text-[11px]">COGNITIVE CORE ACTIVE</span>
+          <span>COGNITIVE CORE ONLINE</span>
         </div>
       </div>
 
@@ -156,7 +171,7 @@ export default function IntelligencePage() {
           <button
             key={chip.label}
             onClick={() => handleSendMessage(chip.query)}
-            className="px-3 py-1.5 rounded-full surface-type-a hover:surface-type-b hover:border-ron-cyan/40 text-white text-[10.5px] font-bold whitespace-nowrap active:scale-95 transition-all shrink-0"
+            className="px-3.5 py-2 rounded-full surface-type-a hover:surface-type-b hover:border-ron-cyan/50 text-white text-[11px] font-bold whitespace-nowrap active:scale-95 transition-all shrink-0 shadow-md"
           >
             {chip.label}
           </button>
@@ -168,14 +183,14 @@ export default function IntelligencePage() {
         {messages.map((m, idx) => (
           <div
             key={idx}
-            className={`p-4 rounded-[8px] space-y-2.5 ${
+            className={`p-4 sm:p-5 rounded-[8px] space-y-2.5 ${
               m.sender === "USER"
                 ? "ml-auto bg-ron-violet/20 border border-ron-violet/40 text-white max-w-[85%]"
                 : "mr-auto surface-type-b text-ron-text max-w-[95%] sm:max-w-[85%]"
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="mono-label text-[9px] font-bold text-ron-cyan">
+              <span className="mono-label text-[9.5px] font-bold text-ron-cyan">
                 {m.sender === "USER" ? "OPERATOR" : m.title || "RON COGNITIVE CORE"}
               </span>
               <span className="text-[9px] text-ron-dim">{m.time}</span>
@@ -187,10 +202,10 @@ export default function IntelligencePage() {
 
             {/* Structured telemetry card block (if metrics present) */}
             {m.metrics && (
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.06]">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-white/[0.06]">
                 {Object.entries(m.metrics).map(([k, v]) => (
-                  <div key={k} className="p-2 rounded-[4px] bg-black/60 border border-white/5">
-                    <span className="mono-label text-[8px] block text-ron-dim">{k}</span>
+                  <div key={k} className="p-2.5 rounded-[4px] bg-black/60 border border-white/5">
+                    <span className="mono-label text-[8.5px] block text-ron-dim">{k}</span>
                     <span className="text-xs font-bold text-white mono-data mt-0.5 block">{v}</span>
                   </div>
                 ))}
@@ -213,16 +228,16 @@ export default function IntelligencePage() {
         ))}
 
         {isThinking && (
-          <div className="flex items-center gap-2 p-3 surface-type-a text-ron-cyan text-xs rounded-[6px] max-w-xs">
-            <span className="w-3 h-3 border-2 border-ron-cyan border-t-transparent rounded-full animate-spin" />
-            <span>Scanning consensus state roots...</span>
+          <div className="flex items-center gap-2 p-3.5 surface-type-a text-ron-cyan text-xs rounded-[6px] max-w-xs">
+            <span className="w-3.5 h-3.5 border-2 border-ron-cyan border-t-transparent rounded-full animate-spin" />
+            <span>Scanning consensus state roots & telemetry...</span>
           </div>
         )}
       </div>
 
       {/* Fixed Bottom AI Query Bar (Thumb reachable on mobile) */}
-      <div className="fixed bottom-16 sm:bottom-0 left-0 right-0 p-3 bg-[#050507]/95 backdrop-blur-xl border-t border-white/[0.08] z-30">
-        <div className="max-w-2xl mx-auto flex items-center gap-2">
+      <div className="fixed bottom-16 sm:bottom-0 left-0 right-0 p-3 bg-[#04050A]/95 backdrop-blur-xl border-t border-white/[0.08] z-30">
+        <div className="max-w-3xl mx-auto flex items-center gap-2">
           <input
             type="text"
             value={chatInput}
@@ -230,14 +245,14 @@ export default function IntelligencePage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSendMessage(chatInput);
             }}
-            placeholder="Ask 'Analyze my portfolio' or /risk..."
-            className="w-full bg-black/80 border border-white/15 rounded-[6px] px-3.5 py-2.5 text-xs text-white placeholder-ron-muted focus:outline-none focus:border-ron-cyan font-mono"
+            placeholder="Ask 'Analyze my portfolio' or query /network..."
+            className="w-full bg-black/80 border border-white/15 rounded-[6px] px-4 py-2.5 text-xs text-white placeholder-ron-muted focus:outline-none focus:border-ron-cyan font-mono"
           />
           <Button
             variant="primary"
             size="md"
             onClick={() => handleSendMessage(chatInput)}
-            className="text-xs shrink-0 px-3.5"
+            className="text-xs shrink-0 px-4"
           >
             <Send className="w-3.5 h-3.5 text-black" />
           </Button>

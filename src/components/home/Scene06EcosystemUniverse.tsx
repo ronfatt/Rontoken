@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ECOSYSTEM_PRODUCTS } from "@/lib/mock-data";
 import { EcosystemProduct } from "@/lib/types";
@@ -14,7 +15,7 @@ export const Scene06EcosystemUniverse: React.FC = () => {
   const [rotationAngle, setRotationAngle] = useState(0);
 
   return (
-    <section className="relative py-28 px-4 sm:px-6 lg:px-8 border-t border-white/[0.04]">
+    <section className="relative py-28 px-4 sm:px-6 lg:px-8 border-t border-white/[0.06] bg-[#04050A]">
       <div className="max-w-[1440px] mx-auto space-y-16">
         {/* Header */}
         <div className="text-center space-y-4">
@@ -49,8 +50,8 @@ export const Scene06EcosystemUniverse: React.FC = () => {
             </div>
 
             {/* Center Core */}
-            <div className="relative z-10 w-20 h-20 rounded-[6px] bg-gradient-to-br from-ron-violet to-ron-cyan p-[1.5px] shadow-[0_0_30px_rgba(117,92,255,0.3)]">
-              <div className="w-full h-full bg-[#050507] rounded-[5px] flex flex-col items-center justify-center font-mono">
+            <div className="relative z-10 w-20 h-20 rounded-[6px] bg-gradient-to-br from-ron-violet to-ron-cyan p-[1.5px] shadow-[0_0_30px_rgba(122,92,255,0.3)]">
+              <div className="w-full h-full bg-[#04050A] rounded-[5px] flex flex-col items-center justify-center font-mono">
                 <span className="text-[9px] text-ron-cyan font-bold tracking-wider">CORE</span>
                 <span className="text-sm font-black text-white">RON</span>
                 <span className="text-[8px] text-ron-green">HUB</span>
@@ -59,12 +60,12 @@ export const Scene06EcosystemUniverse: React.FC = () => {
 
             {/* Orbiting Satellite Products */}
             {ECOSYSTEM_PRODUCTS.map((prod, index) => {
-              const total = ECOSYSTEM_PRODUCTS.length;
-              const angleDeg = (index * (360 / total) + rotationAngle) % 360;
-              const angleRad = (angleDeg * Math.PI) / 180;
-              const radius = 165;
-              const ox = Math.cos(angleRad) * radius;
-              const oy = Math.sin(angleRad) * radius;
+              const angle =
+                (index / ECOSYSTEM_PRODUCTS.length) * 360 + rotationAngle;
+              const rad = (angle * Math.PI) / 180;
+              const distance = 145; // px from center
+              const x = Math.cos(rad) * distance;
+              const y = Math.sin(rad) * distance;
 
               const isSelected = selectedProduct.id === prod.id;
 
@@ -73,12 +74,12 @@ export const Scene06EcosystemUniverse: React.FC = () => {
                   key={prod.id}
                   onClick={() => setSelectedProduct(prod)}
                   style={{
-                    transform: `translate(${ox}px, ${oy}px)`,
-                    borderColor: isSelected ? prod.color : undefined,
+                    transform: `translate(${x}px, ${y}px)`,
+                    borderColor: isSelected ? prod.color : "rgba(255,255,255,0.15)",
                   }}
-                  className={`absolute z-20 p-2 rounded-[4px] transition-all duration-200 flex items-center gap-2 select-none font-mono text-[9px] ${
+                  className={`absolute z-20 px-3 py-1.5 rounded-[4px] font-mono text-[11px] flex items-center gap-2 transition-all duration-300 ${
                     isSelected
-                      ? "bg-ron-elevated border-2 scale-110 shadow-[0_0_20px_rgba(117,92,255,0.3)] z-30"
+                      ? "bg-ron-elevated border-2 scale-110 shadow-[0_0_20px_rgba(122,92,255,0.4)] z-30"
                       : "bg-black/85 border border-white/15 hover:scale-105 hover:bg-black"
                   }`}
                 >
@@ -94,35 +95,45 @@ export const Scene06EcosystemUniverse: React.FC = () => {
             })}
           </div>
 
-          {/* Product Inspector Detail Panel (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="surface-type-c p-8 tech-corner-tl space-y-6">
-              <div className="flex items-center justify-between">
-                <span className="mono-label text-[10px] text-ron-cyan font-bold">
-                  {selectedProduct.category} PROTOCOL
-                </span>
-                <span
-                  className="font-mono text-[9px] font-bold px-2 py-0.5 rounded-[2px] border"
-                  style={{
-                    borderColor: selectedProduct.color,
-                    color: selectedProduct.color,
-                    backgroundColor: `${selectedProduct.color}15`,
-                  }}
-                >
-                  {selectedProduct.status}
-                </span>
+          {/* Product Inspector Detail Panel with Cyber Character Artwork (5 cols) */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="surface-type-c p-6 sm:p-8 tech-corner-tl space-y-5">
+              {/* Top Banner with Mini Cyber Runner Visual */}
+              <div className="flex items-center gap-4 border-b border-white/[0.08] pb-4">
+                <div className="relative w-16 h-16 rounded-[8px] overflow-hidden border border-ron-green/40 shrink-0 shadow-[0_0_15px_rgba(150,255,75,0.2)]">
+                  <Image
+                    src="/images/cyber_runner.jpg"
+                    alt="Cyber Runner"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div>
+                  <span className="mono-label text-[9px] text-ron-cyan font-bold block">
+                    {selectedProduct.category} PROTOCOL
+                  </span>
+                  <h3 className="text-xl font-black text-white">{selectedProduct.name}</h3>
+                  <span
+                    className="font-mono text-[8.5px] font-bold px-1.5 py-0.5 rounded-[2px] border inline-block mt-0.5"
+                    style={{
+                      borderColor: selectedProduct.color,
+                      color: selectedProduct.color,
+                      backgroundColor: `${selectedProduct.color}15`,
+                    }}
+                  >
+                    {selectedProduct.status}
+                  </span>
+                </div>
               </div>
 
               <div>
-                <h3 className="text-2xl font-black text-white">{selectedProduct.name}</h3>
-                <p className="text-xs text-ron-cyan font-mono mt-1">
+                <p className="text-xs text-ron-cyan font-mono">
                   {selectedProduct.tagline}
                 </p>
+                <p className="text-xs sm:text-sm text-ron-muted leading-relaxed font-sans mt-2">
+                  {selectedProduct.description}
+                </p>
               </div>
-
-              <p className="text-xs sm:text-sm text-ron-muted leading-relaxed font-sans">
-                {selectedProduct.description}
-              </p>
 
               {/* Metrics Chip */}
               <div className="p-3 surface-type-a font-mono text-xs text-ron-text">
@@ -140,7 +151,7 @@ export const Scene06EcosystemUniverse: React.FC = () => {
                   <Button
                     variant="primary"
                     className="w-full text-xs"
-                    rightIcon={<ArrowUpRight className="w-3.5 h-3.5" />}
+                    rightIcon={<ArrowUpRight className="w-3.5 h-3.5 text-black" />}
                   >
                     LAUNCH {selectedProduct.name.toUpperCase()}
                   </Button>
