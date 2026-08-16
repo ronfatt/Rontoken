@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRonStore } from "@/lib/store";
-import { DEMO_TOKENS } from "@/lib/mock-data";
 import { formatCurrency, formatNumber, formatAddress } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import {
@@ -15,27 +14,43 @@ import {
 } from "lucide-react";
 
 export default function SwapPage() {
-  const { metrics, executeTransaction, resetTxStage, txStage, activeTxReceipt } =
-    useRonStore();
+  const {
+    metrics,
+    tokens,
+    swapTokens,
+    resetTxStage,
+    txStage,
+    activeTxReceipt,
+  } = useRonStore();
 
   const [fromTokenSymbol, setFromTokenSymbol] = useState("USDT");
   const [toTokenSymbol, setToTokenSymbol] = useState("RON");
   const [fromAmount, setFromAmount] = useState<string>("1000");
   const [slippage, setSlippage] = useState("0.1%");
   const [copied, setCopied] = useState(false);
+  const [swapError, setSwapError] = useState<string | null>(null);
 
   const tokenFrom =
-    DEMO_TOKENS.find((t) => t.symbol === fromTokenSymbol) || DEMO_TOKENS[1];
+    tokens.find((t) => t.symbol === fromTokenSymbol) || tokens[1] || {
+      symbol: "USDT",
+      name: "Tether USD",
+      balance: 8420,
+      price: 1.0,
+    };
   const tokenTo =
-    DEMO_TOKENS.find((t) => t.symbol === toTokenSymbol) || DEMO_TOKENS[0];
+    tokens.find((t) => t.symbol === toTokenSymbol) || tokens[0] || {
+      symbol: "RON",
+      name: "RON Token",
+      balance: 12840.42,
+      price: metrics.ronPrice,
+    };
 
   const numFrom = parseFloat(fromAmount) || 0;
-  const toAmount =
-    tokenFrom.symbol === "RON"
-      ? (numFrom * metrics.ronPrice) / tokenTo.price
-      : tokenTo.symbol === "RON"
-      ? (numFrom * tokenFrom.price) / metrics.ronPrice
-      : (numFrom * tokenFrom.price) / tokenTo.price;
+  const priceFrom = tokenFrom.symbol === "RON" ? metrics.ronPrice : tokenFrom.price;
+  const priceTo = tokenTo.symbol === "RON" ? metrics.ronPrice : tokenTo.price;
+
+  const toAmount = numFrom > 0 && priceTo > 0 ? (numFrom * priceFrom) / priceTo : 0;
+  const isInsufficientBalance = numFrom > tokenFrom.balance;
 
   const handleSwapDirection = () => {
     setFromTokenSymbol(toTokenSymbol);
@@ -43,12 +58,15 @@ export default function SwapPage() {
   };
 
   const handleExecuteSwap = async () => {
-    await executeTransaction("SWAP", {
-      fromAmount: numFrom,
-      toAmount: toAmount,
-      tokenFrom: fromTokenSymbol,
-      tokenTo: toTokenSymbol,
-    });
+    setSwapError(null);
+    if (isInsufficientBalance) {
+      setSwapError(`Insufficient ${tokenFrom.symbol} balance.`);
+      return;
+    }
+    const res = await swapTokens(fromTokenSymbol, toTokenSymbol, numFrom, toAmount);
+    if (!res.success) {
+      setSwapError(res.error || "Swap execution failed.");
+    }
   };
 
   const handleCopy = () => {
@@ -60,13 +78,13 @@ export default function SwapPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12 font-mono text-xs">
       {/* Header */}
       <div className="text-center space-y-4 max-w-2xl mx-auto">
         <span className="mono-label block tracking-[0.2em] text-ron-violet">
           FLAGSHIP EXECUTION PRIMITIVE
         </span>
-        <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+        <h1 className="text-4xl sm:text-5xl font-black text-white font-sans tracking-tight">
           RON Swap Terminal
         </h1>
         <p className="text-xs sm:text-sm text-ron-muted leading-relaxed font-sans">
@@ -86,23 +104,23 @@ export default function SwapPage() {
 
             <div className="space-y-2 text-ron-muted pt-3 border-t border-white/[0.08]">
               <div className="flex justify-between">
-                <span className="mono-label text-[10px]">SWAPPED</span>
+                <span className="mono-label text-[10px]">SWAPPED:</span>
                 <span className="text-white font-bold mono-data">
                   {fromAmount} {fromTokenSymbol} → {toAmount.toFixed(4)} {toTokenSymbol}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="mono-label text-[10px]">TX HASH</span>
+                <span className="mono-label text-[10px]">TX HASH:</span>
                 <span className="text-ron-cyan font-bold mono-data">
                   {formatAddress(activeTxReceipt.txHash, 8, 6)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="mono-label text-[10px]">BLOCK HEIGHT</span>
+                <span className="mono-label text-[10px]">BLOCK HEIGHT:</span>
                 <span className="text-white mono-data">#{activeTxReceipt.blockHeight}</span>
               </div>
               <div className="flex justify-between">
-                <span className="mono-label text-[10px]">NETWORK GAS</span>
+                <span className="mono-label text-[10px]">NETWORK GAS:</span>
                 <span className="text-ron-green mono-data">$0.08 (0.00042 RON)</span>
               </div>
             </div>
@@ -166,7 +184,7 @@ export default function SwapPage() {
                   onChange={(e) => setFromTokenSymbol(e.target.value)}
                   className="p-1.5 rounded-[4px] bg-black/80 border border-white/10 font-mono font-bold text-xs text-white focus:outline-none"
                 >
-                  {DEMO_TOKENS.map((t) => (
+                  {tokens.map((t) => (
                     <option key={t.symbol} value={t.symbol}>
                       {t.symbol}
                     </option>
@@ -189,7 +207,7 @@ export default function SwapPage() {
             <div className="p-3.5 surface-type-a space-y-1.5">
               <div className="flex items-center justify-between font-mono text-[10px] text-ron-muted">
                 <span className="mono-label text-[9px]">YOU RECEIVE</span>
-                <span className="mono-data">1 {tokenFrom.symbol} = {formatCurrency(tokenFrom.price / (tokenTo.symbol === "RON" ? metrics.ronPrice : tokenTo.price), 3)} {tokenTo.symbol}</span>
+                <span className="mono-data">1 {tokenFrom.symbol} = {formatCurrency(priceFrom / (priceTo || 1), 3)} {tokenTo.symbol}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-2xl font-bold font-mono text-ron-cyan mono-data">
@@ -200,7 +218,7 @@ export default function SwapPage() {
                   onChange={(e) => setToTokenSymbol(e.target.value)}
                   className="p-1.5 rounded-[4px] bg-black/80 border border-white/10 font-mono font-bold text-xs text-white focus:outline-none"
                 >
-                  {DEMO_TOKENS.map((t) => (
+                  {tokens.map((t) => (
                     <option key={t.symbol} value={t.symbol}>
                       {t.symbol}
                     </option>
@@ -208,6 +226,11 @@ export default function SwapPage() {
                 </select>
               </div>
             </div>
+
+            {/* Error Message */}
+            {swapError && (
+              <p className="text-ron-red text-[11px] font-bold">{swapError}</p>
+            )}
 
             {/* Routing Parameter Details */}
             <div className="p-3.5 surface-type-a space-y-1 font-mono text-[11px] text-ron-muted">
@@ -231,20 +254,30 @@ export default function SwapPage() {
               </div>
             </div>
 
-            {/* Execute Button */}
+            {/* Execute Button with validation */}
             <Button
               variant="primary"
               size="lg"
               onClick={handleExecuteSwap}
+              disabled={isInsufficientBalance || numFrom <= 0}
               isLoading={txStage !== "IDLE" && txStage !== "CONFIRMED"}
               className="w-full text-xs font-mono mt-1"
             >
-              {txStage === "PREPARING" && "PREPARING ROUTE..."}
-              {txStage === "SIGNATURE" && "OPTIMIZING LIQUIDITY..."}
-              {txStage === "BROADCASTING" && "SIGNING TRANSACTION..."}
-              {txStage === "VALIDATING" && "BROADCASTING TO MEMPOOL..."}
-              {txStage === "FINALIZING" && "FINALIZING SLOT..."}
-              {txStage === "IDLE" && `SWAP ${tokenFrom.symbol} FOR ${tokenTo.symbol}`}
+              {isInsufficientBalance
+                ? `INSUFFICIENT ${tokenFrom.symbol} BALANCE`
+                : numFrom <= 0
+                ? "ENTER AN AMOUNT"
+                : txStage === "PREPARING"
+                ? "PREPARING ROUTE..."
+                : txStage === "SIGNATURE"
+                ? "OPTIMIZING LIQUIDITY..."
+                : txStage === "BROADCASTING"
+                ? "SIGNING TRANSACTION..."
+                : txStage === "VALIDATING"
+                ? "BROADCASTING TO MEMPOOL..."
+                : txStage === "FINALIZING"
+                ? "FINALIZING SLOT..."
+                : `SWAP ${tokenFrom.symbol} FOR ${tokenTo.symbol}`}
             </Button>
           </div>
         )}

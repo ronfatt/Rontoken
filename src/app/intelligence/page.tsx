@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRonStore } from "@/lib/store";
+import { formatNumber, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import {
   Cpu,
@@ -12,25 +13,26 @@ import {
   Activity,
   Layers,
   Radio,
+  Lock,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { id: "overview", name: "Overview", icon: Activity },
+  { id: "portfolio", name: "Portfolio Analyzer", icon: Layers },
+  { id: "staking", name: "Staking Inspection", icon: Lock },
   { id: "network", name: "Network Health", icon: Radio },
-  { id: "wallets", name: "Wallet Profiler", icon: Layers },
   { id: "liquidity", name: "Liquidity Depth", icon: Zap },
   { id: "validators", name: "Validator Risk", icon: ShieldCheck },
-  { id: "governance", name: "DAO Analytics", icon: Cpu },
 ];
 
 export default function IntelligencePage() {
-  const { metrics } = useRonStore();
+  const { metrics, ronBalance, stakedBalance, portfolioValueUSD, stakingPositions, validators, proposals } = useRonStore();
   const [activeTab, setActiveTab] = useState("overview");
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<Array<{ sender: "AI" | "USER"; text: string; time: string }>>([
     {
       sender: "AI",
-      text: "RON Intelligence initialized. Monitoring 184 validators and 12,840 TPS. Type a command (/network, /risk, /liquidity) or query any protocol state.",
+      text: "RON Intelligence initialized. Autonomous cognitive auditor connected to 184 validators. Ask 'Analyze my portfolio', 'Analyze my staking positions', or query any network state.",
       time: "10:00",
     },
   ]);
@@ -44,21 +46,25 @@ export default function IntelligencePage() {
     setChatInput("");
     setIsThinking(true);
 
-    await new Promise((r) => setTimeout(r, 650));
+    await new Promise((r) => setTimeout(r, 600));
 
     let aiReply = "Telemetry analyzed. All consensus metrics are nominal.";
     const lower = text.toLowerCase();
 
-    if (lower.includes("/network") || lower.includes("network")) {
-      aiReply = `Network state: OPTIMAL. Slot height #${metrics.blockHeight}. TPS is currently ${metrics.currentTps.toLocaleString()} with 0.42s finality across 184 active validator clusters.`;
-    } else if (lower.includes("/risk") || lower.includes("risk")) {
-      aiReply = `Risk Assessment: MINIMAL (Score 99.8/100). Zero invalid ZK state proofs detected in the last 10,000 blocks. Insured slashing pool holds $22.5M in reserve.`;
-    } else if (lower.includes("/liquidity") || lower.includes("liquidity")) {
-      aiReply = `Liquidity Depth: $428.4M TVL. DEX pools are clearing with 0.03% average slippage. Turing-AMM v2.4 route optimization active.`;
-    } else if (lower.includes("/validators") || lower.includes("validator")) {
-      aiReply = `Validators: 184 synchronized clusters across 42 jurisdictions. Top validator by stake is Apex SG (42.8M RON) with 99.999% uptime.`;
-    } else if (lower.includes("/wallet") || lower.includes("wallet")) {
-      aiReply = `Wallet profiling active: Sovereign addresses on RON benefit from sub-cent gas execution and hardware-grade enclave signature verification.`;
+    if (lower.includes("portfolio") || lower.includes("balance") || lower.includes("my account")) {
+      aiReply = `Portfolio Analysis: Your total portfolio is valued at ${formatCurrency(portfolioValueUSD, 2)}. Liquid balance: ${formatNumber(ronBalance, 2)} RON ($${formatNumber(ronBalance * metrics.ronPrice, 2)}). Staked balance: ${formatNumber(stakedBalance, 2)} RON. Total DAO voting power: ${formatNumber(ronBalance + stakedBalance * 1.5, 0)} vRON. Zero unfinalized transactions in mempool.`;
+    } else if (lower.includes("staking") || lower.includes("stake") || lower.includes("yield")) {
+      aiReply = `Staking Analysis: You have ${stakingPositions.length} active staking delegation(s) totaling ${formatNumber(stakedBalance, 2)} RON earning up to 18.42% APY. Accrued unclaimed rewards: +${formatNumber(stakingPositions.reduce((s, p) => s + p.accruedRewards, 0), 4)} RON. Slashing insurance status: 100% COVERED.`;
+    } else if (lower.includes("/network") || lower.includes("network") || lower.includes("tps")) {
+      aiReply = `Network State: OPTIMAL. Slot height #${metrics.blockHeight}. Throughput is currently ${metrics.currentTps.toLocaleString()} TPS with 0.42s finality across ${metrics.activeValidators} active validator clusters. Gas price: ${metrics.avgGasGwei} Gwei.`;
+    } else if (lower.includes("/risk") || lower.includes("risk") || lower.includes("security")) {
+      aiReply = `Risk Assessment: OPTIMAL (Score 99.8/100). Zero invalid ZK state proofs detected in the last 10,000 blocks. Slashing insurance cushion is funded with $22.5M reserve.`;
+    } else if (lower.includes("/liquidity") || lower.includes("liquidity") || lower.includes("swap")) {
+      aiReply = `Liquidity Depth: $${(metrics.tvl / 1000000).toFixed(1)}M TVL across RON/USDT and RON/ETH AMM pools. Average execution slippage: 0.03%. Turing-AMM v2.4 route optimization active.`;
+    } else if (lower.includes("governance") || lower.includes("dao") || lower.includes("proposal")) {
+      aiReply = `Governance Summary: ${proposals.length} active DAO proposals on-chain. Top active proposal is ${proposals[0]?.id}: "${proposals[0]?.title}" with ${proposals[0]?.votes.yes}% YES approval. Quorum threshold met.`;
+    } else if (lower.includes("validator") || lower.includes("nodes")) {
+      aiReply = `Validator Telemetry: 184 synchronized clusters across 42 jurisdictions. Top cluster by stake is ${validators[0]?.name} (${formatNumber(validators[0]?.totalStake || 42800000, 0)} RON) with ${validators[0]?.uptime || 99.99}% uptime.`;
     } else {
       aiReply = `RON Cognitive Agent processed: "${text}". Consensus verification confirms continuous 0.42s block settlement with 99.998% network uptime.`;
     }
@@ -112,19 +118,19 @@ export default function IntelligencePage() {
           })}
 
           <div className="p-4 surface-type-a space-y-2 mt-4">
-            <span className="mono-label text-[9px] uppercase block">SLASH COMMAND SHORTCUTS</span>
+            <span className="mono-label text-[9px] uppercase block">PRESET QUERIES</span>
             <div className="space-y-1 text-[11px] text-ron-cyan font-mono">
+              <p onClick={() => handleSendMessage("Analyze my portfolio")} className="cursor-pointer hover:underline">
+                &gt; Analyze my portfolio
+              </p>
+              <p onClick={() => handleSendMessage("Analyze my staking positions")} className="cursor-pointer hover:underline">
+                &gt; Analyze my staking positions
+              </p>
               <p onClick={() => handleSendMessage("/network")} className="cursor-pointer hover:underline">
-                /network
+                &gt; /network
               </p>
               <p onClick={() => handleSendMessage("/risk")} className="cursor-pointer hover:underline">
-                /risk
-              </p>
-              <p onClick={() => handleSendMessage("/liquidity")} className="cursor-pointer hover:underline">
-                /liquidity
-              </p>
-              <p onClick={() => handleSendMessage("/validators")} className="cursor-pointer hover:underline">
-                /validators
+                &gt; /risk
               </p>
             </div>
           </div>
@@ -169,11 +175,12 @@ export default function IntelligencePage() {
 
           <div className="p-4 surface-type-d space-y-2">
             <span className="mono-label text-[9px] text-ron-cyan font-bold uppercase block">
-              COGNITIVE AUDIT FINDING
+              LIVE STATE SYNTHESIS
             </span>
             <p className="text-ron-muted leading-relaxed text-[11px] font-sans">
-              Continuous neural auditor runs 48 algorithmic tests every block. Mempool ordering is verified
-              with zero miner extractable value (MEV) leakage.
+              Continuous neural auditor runs 48 algorithmic tests every block. Your sovereign account has{" "}
+              <strong className="text-white">{formatNumber(ronBalance, 2)} RON</strong> liquid and{" "}
+              <strong className="text-ron-cyan">{formatNumber(stakedBalance, 2)} RON</strong> actively staked.
             </p>
           </div>
         </div>
@@ -186,7 +193,7 @@ export default function IntelligencePage() {
               <Terminal className="w-3.5 h-3.5" />
               <span>RON ASSISTANT</span>
             </div>
-            <span className="text-ron-dim text-[10px]">LLM V2.4</span>
+            <span className="text-ron-dim text-[10px]">STATE-AWARE V2.4</span>
           </div>
 
           {/* Chat Messages */}
@@ -210,7 +217,7 @@ export default function IntelligencePage() {
             {isThinking && (
               <div className="flex items-center gap-2 p-2 text-ron-cyan text-xs">
                 <span className="w-3 h-3 border-2 border-ron-cyan border-t-transparent rounded-full animate-spin" />
-                <span>Auditing protocol telemetry...</span>
+                <span>Querying live consensus store...</span>
               </div>
             )}
           </div>
@@ -224,7 +231,7 @@ export default function IntelligencePage() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSendMessage(chatInput);
               }}
-              placeholder="Query protocol or /network..."
+              placeholder="Ask 'Analyze my portfolio' or /network..."
               className="w-full bg-black/60 border border-white/10 rounded-[4px] px-3 py-1.5 text-xs text-white placeholder-ron-muted focus:outline-none focus:border-ron-cyan font-mono"
             />
             <Button

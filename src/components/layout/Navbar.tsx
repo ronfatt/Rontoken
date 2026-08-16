@@ -11,14 +11,8 @@ import {
   Menu,
   X,
   Wallet,
-  Activity,
-  Layers,
-  Cpu,
-  Vote,
-  Compass,
-  ArrowLeftRight,
-  ShieldCheck,
-  Code2,
+  Settings,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "../ui/Button";
 
@@ -31,6 +25,7 @@ const NAV_LINKS = [
   { name: "Explorer", href: "/explorer" },
   { name: "Governance", href: "/governance" },
   { name: "Intelligence", href: "/intelligence" },
+  { name: "Status", href: "/status" },
   { name: "Developers", href: "/developers" },
 ];
 
@@ -46,6 +41,9 @@ export const Navbar: React.FC = () => {
     setNotificationOpen,
     unreadNotificationCount,
     setDiagnosticsOpen,
+    activeNetwork,
+    setActiveNetwork,
+    resetDemoEnvironment,
   } = useRonStore();
 
   const [isScrolled, setIsScrolled] = useState(false);
@@ -76,7 +74,7 @@ export const Navbar: React.FC = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
         isScrolled
-          ? "bg-[#050507]/90 backdrop-blur-md border-b border-white/[0.08] shadow-[0_4px_30px_rgba(0,0,0,0.8)] py-2.5"
+          ? "bg-[#050507]/92 backdrop-blur-md border-b border-white/[0.08] shadow-[0_4px_30px_rgba(0,0,0,0.8)] py-2.5"
           : "bg-transparent py-4 border-b border-white/[0.04]"
       }`}
     >
@@ -96,7 +94,7 @@ export const Navbar: React.FC = () => {
                 RON
               </span>
               <span className="font-mono text-[9px] text-ron-cyan tracking-wider mt-0.5">
-                V2.4 MAINNET
+                V2.4 {activeNetwork.toUpperCase()}
               </span>
             </div>
           </div>
@@ -118,7 +116,7 @@ export const Navbar: React.FC = () => {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`relative px-3 py-1.5 text-xs font-mono tracking-wide uppercase transition-all ${
+                className={`relative px-2.5 py-1.5 text-xs font-mono tracking-wide uppercase transition-all ${
                   isActive
                     ? "text-white font-bold"
                     : "text-ron-muted hover:text-white"
@@ -126,20 +124,35 @@ export const Navbar: React.FC = () => {
               >
                 <span>{link.name}</span>
                 {isActive && (
-                  <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-ron-cyan shadow-[0_0_8px_#00DFF7]" />
+                  <span className="absolute bottom-0 left-2.5 right-2.5 h-[2px] bg-ron-cyan shadow-[0_0_8px_#00DFF7]" />
                 )}
               </Link>
             );
           })}
         </nav>
 
-        {/* Right: Technical Command, Notifications & Wallet Trigger */}
+        {/* Right: Network Selector, Command, Notifications & Wallet Trigger */}
         <div className="flex items-center gap-2">
-          {/* Mainnet Operational Heartbeat */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-[3px] bg-ron-green/[0.06] border border-ron-green/20 font-mono text-[10px] text-ron-green">
+          {/* Network Switcher Toggle */}
+          <button
+            onClick={() =>
+              setActiveNetwork(activeNetwork === "RON Mainnet" ? "RON Testnet" : "RON Mainnet")
+            }
+            className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-[3px] bg-ron-green/[0.06] border border-ron-green/20 font-mono text-[10px] text-ron-green hover:bg-ron-green/15 transition-colors"
+            title="Click to switch network"
+          >
             <span className="w-1.5 h-1.5 rounded-full bg-ron-green animate-pulse" />
-            <span className="tracking-wider">LIVE</span>
-          </div>
+            <span className="tracking-wider">{activeNetwork.toUpperCase()}</span>
+          </button>
+
+          {/* Reset Demo State Trigger */}
+          <button
+            onClick={resetDemoEnvironment}
+            className="hidden md:flex p-1.5 rounded-[4px] bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-ron-muted hover:text-white transition-colors"
+            title="Reset Demo Environment"
+          >
+            <RefreshCw className="w-3 h-3 text-ron-cyan" />
+          </button>
 
           {/* Command Center Trigger (⌘K) */}
           <button

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { RonStoreProvider } from "@/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
@@ -11,46 +11,72 @@ import { CustomCursor } from "@/components/layout/CustomCursor";
 import { DiagnosticsModal } from "@/components/layout/DiagnosticsModal";
 
 export const metadata: Metadata = {
-  title: "RON — The Programmable Economy | One Token. Infinite Utility.",
+  title: {
+    default: "RON — The Programmable Economy",
+    template: "%s | RON Network",
+  },
   description:
-    "RON is not just a token. It is an intelligent digital economic infrastructure. Ultra-low latency, sub-second finality, and zero-knowledge sovereign execution.",
+    "RON is an intelligent digital economic infrastructure demonstrating sub-second settlement, liquid staking, sovereign governance, decentralized exchange, and autonomous cognitive telemetry.",
   keywords: [
+    "RON",
     "RON Network",
     "Programmable Economy",
     "Web3 Infrastructure",
-    "Layer 1 Blockchain",
-    "DeFi",
-    "Staking",
     "Blockchain Explorer",
-    "Zero Knowledge",
+    "DeFi Swap",
+    "Liquid Staking",
+    "Decentralized Governance",
   ],
+  authors: [{ name: "RON Network Architecture Team" }],
+  creator: "RON Foundation",
+  publisher: "RON Network",
+  metadataBase: new URL("https://ron.network"),
+  openGraph: {
+    title: "RON — The Programmable Economy",
+    description: "One Token. Infinite Utility. High-throughput digital economic infrastructure.",
+    url: "https://ron.network",
+    siteName: "RON Network",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "RON — The Programmable Economy",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#050507",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en" className="dark bg-[#050507]">
-      <body className="min-h-screen bg-[#050507] text-[#F5F7FA] antialiased selection:bg-ron-violet/30 selection:text-white relative">
+    <html lang="en" className="dark">
+      <body className="bg-[#050507] text-[#F5F7FA] min-h-screen flex flex-col antialiased selection:bg-ron-violet/40 selection:text-white">
         <RonStoreProvider>
-          {/* Custom Dynamic Precision Cursor (Desktop) */}
-          <CustomCursor />
-
-          {/* Cinematic Boot Sequence (First visit per session) */}
           <BootSequence />
-
-          {/* Global Shell Header */}
+          <CustomCursor />
           <Navbar />
-
-          {/* Main Application Routes */}
-          <main className="min-h-screen pt-20">{children}</main>
-
-          {/* Institutional Global Footer */}
+          <main className="flex-1 pt-16 sm:pt-20">{children}</main>
           <Footer />
-
-          {/* Global OS Shell Modals & Triggers */}
           <CommandCenter />
           <WalletModal />
           <NotificationCenter />

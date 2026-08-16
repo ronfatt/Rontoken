@@ -42,7 +42,7 @@ export const DiagnosticsModal: React.FC = () => {
             [SYS_OK] Genesis state root verified. Zero-Knowledge state prover online.
           </p>
           <p className="text-white">
-            [BLOCK #{metrics.blockHeight}] Validator: {blocks[0]?.validator.name} | Reward: {blocks[0]?.reward} RON
+            [BLOCK #{metrics.blockHeight}] Validator: {typeof blocks[0]?.validator === "string" ? blocks[0]?.validator : blocks[0]?.validator?.name || "Apex SG Validator"} | Reward: {blocks[0]?.blockReward || 2.4} RON
           </p>
           <p className="text-ron-cyan">
             [MEMPOOL] Stream rate: {metrics.currentTps.toLocaleString()} TPS | Gas target: {metrics.avgGasGwei} Gwei

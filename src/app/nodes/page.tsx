@@ -17,7 +17,7 @@ export default function NodesPage() {
   const filtered = GLOBAL_NODES_DATA.filter((n) => {
     const matchType = selectedType === "ALL" || n.type === selectedType;
     const matchSearch =
-      n.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (n.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       n.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
       n.country.toLowerCase().includes(searchQuery.toLowerCase());
     return matchType && matchSearch;

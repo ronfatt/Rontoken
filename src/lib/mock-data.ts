@@ -908,3 +908,33 @@ func main() {
 	fmt.Printf("Block #%d sealed by %s\n", block.Height, block.Validator)
 }`,
 };
+
+export const INITIAL_VALIDATORS = VALIDATORS_LIST;
+export const INITIAL_PROPOSALS = PROPOSALS_LIST;
+export const INITIAL_NOTIFICATIONS = [
+  {
+    id: "notif-01",
+    title: "Consensus Finalized",
+    description: "Slot #24893441 finalized in 0.42s by 184 validators.",
+    type: "SYSTEM" as const,
+    timestamp: Date.now() - 30000,
+    read: false,
+  },
+  {
+    id: "notif-02",
+    title: "RIP-024 Quorum Met",
+    description: "Sub-Second State Roots proposal reached 94.2% YES votes.",
+    type: "GOVERNANCE" as const,
+    timestamp: Date.now() - 120000,
+    read: false,
+    link: "/governance/proposal/RIP-024",
+  },
+  {
+    id: "notif-03",
+    title: "Staking Reward Disbursed",
+    description: "+14.82 RON accrued from Apex SG Validator delegation.",
+    type: "STAKE" as const,
+    timestamp: Date.now() - 360000,
+    read: true,
+  },
+];

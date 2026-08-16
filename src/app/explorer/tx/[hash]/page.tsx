@@ -6,186 +6,153 @@ import { useParams } from "next/navigation";
 import { useRonStore } from "@/lib/store";
 import { formatAddress, formatNumber, formatTimeAgo } from "@/lib/utils";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import {
-  ArrowLeft,
-  Copy,
-  CheckCircle2,
-  ArrowRight,
-  Zap,
-  Layers,
-  FileCode,
-  ShieldCheck,
-} from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { ArrowLeft, Copy, CheckCircle2, ArrowRight, ShieldCheck, Activity } from "lucide-react";
 
-export default function TxDetailsPage() {
+export default function TxDetailPage() {
   const params = useParams();
-  const hashStr = Array.isArray(params.hash) ? params.hash[0] : params.hash;
-  const txHash = hashStr || "0x7f4819a82b9012384f9812739481928374918273948172938471928374918273";
+  const hashParam = Array.isArray(params.hash) ? params.hash[0] : params.hash;
+  const hash = hashParam || "0x9812A8F34C918B52E5A7710F93D13A91F3E9012384759";
 
-  const { transactions, metrics } = useRonStore();
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const { transactions, metrics, walletAddress } = useRonStore();
+  const [copied, setCopied] = useState(false);
 
-  // Find matching tx or provide realistic default
   const tx =
-    transactions.find((t) => t.hash === txHash) || {
-      hash: txHash,
+    transactions.find((t) => t.hash.toLowerCase() === hash.toLowerCase()) || {
+      hash,
       blockHeight: metrics.blockHeight,
-      timestamp: Date.now() - 3000,
-      from: "0x72a819b208efbc912384a89012384f981238491f",
-      to: "0x000000000000000000000000000000000000755c",
-      value: 1000,
+      timestamp: Date.now() - 12000,
+      from: walletAddress,
+      to: "0x7890123456789012345678901234567890123456",
+      value: 1000.0,
       tokenSymbol: "RON",
       type: "SWAP" as const,
+      networkFee: 0.00042,
+      gasUsed: 42000,
+      nonce: 184,
+      confirmations: 12,
       status: "SUCCESS" as const,
-      gasFee: 0.00042,
-      gasPriceGwei: 0.08,
-      nonce: 142,
-      contractAddress: "0x000000000000000000000000000000000000755c",
-      inputData:
-        "0x38ed173900000000000000000000000000000000000000000000000000000000000003e8000000000000000000000000000000000000000000000000000000000000015f",
-      logs: [
-        {
-          event: "SwapExecuted",
-          contract: "RON Router v2",
-          params: { sender: "0x72a8...91f3", amountIn: "1000 USDT", amountOut: "351.28 RON" },
-        },
-      ],
     };
 
-  const handleCopy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(tx.hash);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8 font-mono text-xs">
-      {/* Back link & Title */}
-      <div className="space-y-4">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 font-mono text-xs">
+      {/* Back button */}
+      <div>
         <Link
           href="/explorer"
           className="inline-flex items-center gap-2 text-ron-muted hover:text-white transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-3.5 h-3.5" />
           <span>BACK TO EXPLORER</span>
         </Link>
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white font-sans">
-              Transaction Details
-            </h1>
-            <span className="text-ron-dim text-[11px] block mt-0.5">
-              Verified {formatTimeAgo(tx.timestamp)}
-            </span>
-          </div>
-
-          <StatusBadge status={tx.status} size="md" />
-        </div>
       </div>
 
-      {/* Transaction Flow Visualizer (FROM -> CONTRACT -> TO) */}
-      <div className="p-6 sm:p-8 rounded-2xl bg-ron-surface/90 border border-white/10 shadow-2xl backdrop-blur-xl space-y-6">
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
-          <span className="font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <Zap className="w-4 h-4 text-ron-cyan" />
-            <span>EXECUTION FLOW GRAPH</span>
-          </span>
-          <span className="text-ron-green font-bold">SUB-SECOND SETTLEMENT (0.42s)</span>
-        </div>
-
-        {/* Step Flow Diagram */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center text-center">
-          {/* Origin Address */}
-          <div className="p-4 rounded-xl bg-black/50 border border-white/10 space-y-1">
-            <span className="text-[10px] text-ron-dim uppercase block">ORIGIN (SENDER)</span>
-            <Link
-              href={`/explorer/address/${tx.from}`}
-              className="text-ron-cyan font-bold block hover:underline text-[11px]"
-            >
-              {formatAddress(tx.from, 8, 6)}
-            </Link>
-            <span className="text-[10px] text-ron-muted block">Sovereign Account</span>
-          </div>
-
-          {/* Smart Contract Execution Node */}
-          <div className="p-4 rounded-xl bg-ron-violet/10 border border-ron-violet/40 space-y-1 relative">
-            <span className="text-[10px] text-ron-violet uppercase block font-bold">
-              SMART CONTRACT
+      {/* Transaction Overview Card (Surface Type C) */}
+      <div className="surface-type-c tech-corner-tl tech-corner-br p-6 sm:p-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
+          <div>
+            <span className="mono-label text-[9px] uppercase text-ron-cyan block font-bold">
+              TRANSACTION RECEIPT
             </span>
-            <span className="text-white font-bold block text-[11px]">
-              {tx.contractAddress ? "RON Execution Engine" : "Direct P2P Transfer"}
-            </span>
-            <span className="text-[10px] text-ron-green block">
-              {tx.type} • 0.08 Gwei Gas
-            </span>
-          </div>
-
-          {/* Destination Address */}
-          <div className="p-4 rounded-xl bg-black/50 border border-white/10 space-y-1">
-            <span className="text-[10px] text-ron-dim uppercase block">DESTINATION (RECIPIENT)</span>
-            <Link
-              href={`/explorer/address/${tx.to}`}
-              className="text-ron-cyan font-bold block hover:underline text-[11px]"
-            >
-              {formatAddress(tx.to, 8, 6)}
-            </Link>
-            <span className="text-[10px] text-ron-muted block">
-              {formatNumber(tx.value, 2)} {tx.tokenSymbol} Credited
-            </span>
-          </div>
-        </div>
-
-        {/* Technical Ledger Parameter Rows */}
-        <div className="space-y-3 pt-4 border-t border-white/10">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-black/40 border border-white/5">
-            <span className="text-ron-muted font-bold">TRANSACTION HASH:</span>
-            <div className="flex items-center gap-2">
-              <span className="text-white break-all">{tx.hash}</span>
+            <div className="flex items-center gap-2 mt-1">
+              <h1 className="text-sm sm:text-base font-bold text-white mono-data break-all">
+                {tx.hash}
+              </h1>
               <button
-                onClick={() => handleCopy(tx.hash, "txhash")}
-                className="p-1 text-ron-muted hover:text-white"
+                onClick={handleCopy}
+                className="p-1 text-ron-muted hover:text-white transition-colors shrink-0"
               >
-                {copiedKey === "txhash" ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-ron-green" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" />
-                )}
+                <Copy className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-black/40 border border-white/5">
-            <span className="text-ron-muted font-bold">INCLUDED IN BLOCK:</span>
-            <Link
-              href={`/explorer/block/${tx.blockHeight}`}
-              className="text-ron-cyan font-bold hover:underline"
-            >
-              #{tx.blockHeight.toLocaleString()}
+          <StatusBadge status={tx.status} size="md" />
+        </div>
+
+        {/* Execution Flow Diagram (Sender → Smart Contract → Recipient) */}
+        <div className="p-4 surface-type-a space-y-3">
+          <span className="mono-label text-[9px] uppercase block text-ron-violet font-bold">
+            EXECUTION FLOW GRAPH
+          </span>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="p-3 surface-type-d text-center flex-1 w-full">
+              <span className="mono-label text-[8px] block">ORIGIN (FROM)</span>
+              <Link href={`/explorer/address/${tx.from}`} className="text-ron-cyan font-bold hover:underline mono-data">
+                {formatAddress(tx.from, 6, 6)}
+              </Link>
+            </div>
+
+            <ArrowRight className="w-4 h-4 text-ron-muted shrink-0 hidden sm:inline" />
+
+            <div className="p-3 surface-type-d text-center flex-1 w-full border-ron-violet/40">
+              <span className="mono-label text-[8px] text-ron-violet block">ACTION TYPE</span>
+              <span className="text-white font-bold">{tx.type} ({formatNumber(tx.value, 2)} {tx.tokenSymbol})</span>
+            </div>
+
+            <ArrowRight className="w-4 h-4 text-ron-muted shrink-0 hidden sm:inline" />
+
+            <div className="p-3 surface-type-d text-center flex-1 w-full">
+              <span className="mono-label text-[8px] block">DESTINATION (TO)</span>
+              <Link href={`/explorer/address/${tx.to}`} className="text-ron-green font-bold hover:underline mono-data">
+                {formatAddress(tx.to, 6, 6)}
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Transaction Parameters Table */}
+        <div className="space-y-3 pt-2 text-ron-muted text-[11px]">
+          <div className="flex justify-between py-2 border-b border-white/[0.04]">
+            <span className="mono-label text-[9.5px]">BLOCK HEIGHT:</span>
+            <Link href={`/explorer/block/${tx.blockHeight}`} className="text-ron-cyan font-bold hover:underline mono-data">
+              #{tx.blockHeight}
             </Link>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-black/40 border border-white/5">
-            <span className="text-ron-muted font-bold">NETWORK GAS FEE:</span>
-            <span className="text-ron-green font-bold">
-              ${tx.gasFee.toFixed(5)} ({tx.gasFee} RON)
+          <div className="flex justify-between py-2 border-b border-white/[0.04]">
+            <span className="mono-label text-[9.5px]">TIMESTAMP:</span>
+            <span className="text-white mono-data">
+              {new Date(tx.timestamp).toLocaleString()} ({formatTimeAgo(tx.timestamp)})
             </span>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-black/40 border border-white/5">
-            <span className="text-ron-muted font-bold">NONCE:</span>
-            <span className="text-white">{tx.nonce}</span>
+          <div className="flex justify-between py-2 border-b border-white/[0.04]">
+            <span className="mono-label text-[9.5px]">TRANSFERRED VALUE:</span>
+            <span className="text-white font-bold text-sm mono-data">
+              {formatNumber(tx.value, 4)} {tx.tokenSymbol}
+            </span>
           </div>
 
-          {/* Input Data Box */}
-          {tx.inputData && (
-            <div className="p-3.5 rounded-lg bg-black/60 border border-white/5 space-y-1">
-              <span className="text-ron-dim text-[10px] uppercase block">CALLDATA INPUT PAYLOAD</span>
-              <p className="text-ron-muted break-all text-[11px] leading-relaxed">
-                {tx.inputData}
-              </p>
-            </div>
-          )}
+          <div className="flex justify-between py-2 border-b border-white/[0.04]">
+            <span className="mono-label text-[9.5px]">NETWORK TRANSACTION FEE:</span>
+            <span className="text-ron-green font-bold mono-data">
+              {tx.networkFee || tx.gasFee || 0.00042} RON ($0.08)
+            </span>
+          </div>
+
+          <div className="flex justify-between py-2 border-b border-white/[0.04]">
+            <span className="mono-label text-[9.5px]">GAS UTILIZATION:</span>
+            <span className="text-white mono-data">{(tx.gasUsed || 42000).toLocaleString()} Gas Units</span>
+          </div>
+
+          <div className="flex justify-between py-2 border-b border-white/[0.04]">
+            <span className="mono-label text-[9.5px]">ACCOUNT NONCE:</span>
+            <span className="text-white mono-data">#{tx.nonce ?? 142}</span>
+          </div>
+
+          <div className="flex justify-between py-2">
+            <span className="mono-label text-[9.5px]">CONFIRMATIONS:</span>
+            <span className="text-ron-green font-bold mono-data">
+              {tx.confirmations ?? 12} Validator Confirmations (FINALIZED)
+            </span>
+          </div>
         </div>
       </div>
     </div>
