@@ -1,0 +1,97 @@
+"use client";
+
+import React, { forwardRef, useRef } from "react";
+import { cn } from "@/lib/utils";
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "primary" | "secondary" | "ghost" | "icon" | "system" | "outline" | "danger";
+  size?: "sm" | "md" | "lg" | "icon";
+  isLoading?: boolean;
+  isMagnetic?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+}
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      className,
+      variant = "primary",
+      size = "md",
+      isLoading = false,
+      isMagnetic = false,
+      leftIcon,
+      rightIcon,
+      children,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
+    const btnRef = useRef<HTMLButtonElement | null>(null);
+
+    const baseStyles =
+      "inline-flex items-center justify-center font-mono font-medium transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-ron-violet/50 disabled:opacity-40 disabled:cursor-not-allowed select-none active:scale-[0.98] tracking-wider uppercase";
+
+    const sizeStyles = {
+      sm: "text-[11px] px-3 py-1.5 gap-1.5 rounded-[4px]",
+      md: "text-xs px-4 py-2 gap-2 rounded-[6px]",
+      lg: "text-xs px-6 py-3 gap-2.5 rounded-[6px] tracking-widest",
+      icon: "p-2 w-8 h-8 rounded-[4px]",
+    };
+
+    const variantStyles = {
+      primary:
+        "bg-white text-black hover:bg-[#E8EDF5] border border-white font-bold shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_25px_rgba(255,255,255,0.35)]",
+      secondary:
+        "bg-ron-elevated text-ron-text hover:bg-ron-hover hover:text-white border border-white/10 hover:border-ron-violet/40",
+      ghost:
+        "bg-transparent text-ron-muted hover:text-white hover:bg-white/[0.04] border border-transparent",
+      system:
+        "bg-black/60 text-ron-cyan border border-ron-cyan/30 hover:bg-ron-cyan/10 hover:border-ron-cyan/70 shadow-[0_0_12px_rgba(0,223,247,0.12)]",
+      outline:
+        "bg-transparent text-ron-text border border-white/15 hover:border-white/40 hover:bg-white/[0.02]",
+      danger:
+        "bg-ron-red/10 text-ron-red border border-ron-red/30 hover:bg-ron-red/20",
+      icon: "bg-transparent text-ron-muted hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10",
+    };
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!isMagnetic || disabled || isLoading) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+      e.currentTarget.style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
+    };
+
+    const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!isMagnetic) return;
+      e.currentTarget.style.transform = "translate(0px, 0px)";
+    };
+
+    return (
+      <button
+        ref={(el) => {
+          btnRef.current = el;
+          if (typeof ref === "function") ref(el);
+          else if (ref) ref.current = el;
+        }}
+        disabled={disabled || isLoading}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        className={cn(baseStyles, sizeStyles[size], variantStyles[variant], className)}
+        {...props}
+      >
+        {isLoading ? (
+          <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5" />
+        ) : (
+          leftIcon
+        )}
+        <span>{children}</span>
+        {!isLoading && rightIcon}
+      </button>
+    );
+  }
+);
+
+Button.displayName = "Button";
