@@ -48,13 +48,24 @@ export const Scene01Core: React.FC = () => {
     };
     window.addEventListener("mousemove", handleMouseMove);
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!e.touches[0]) return;
+      const rect = canvas.getBoundingClientRect();
+      const nx = (e.touches[0].clientX - rect.left - width / 2) / (width / 2);
+      const ny = (e.touches[0].clientY - rect.top - height / 2) / (height / 2);
+      mouseRef.current.targetX = Math.max(-1, Math.min(1, nx));
+      mouseRef.current.targetY = Math.max(-1, Math.min(1, ny));
+    };
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+
     const handleScroll = () => {
       scrollRef.current = window.scrollY;
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
 
-    // Layered 3D Particle Cloud
-    const PARTICLE_COUNT = 160;
+    // Responsive 3D Particle Cloud
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+    const PARTICLE_COUNT = isMobile ? 60 : 160;
     const particles: Array<{
       baseX: number;
       baseY: number;
@@ -212,6 +223,7 @@ export const Scene01Core: React.FC = () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);

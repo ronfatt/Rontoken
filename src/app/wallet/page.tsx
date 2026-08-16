@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRonStore } from "@/lib/store";
 import { formatAddress, formatCurrency, formatNumber, formatTimeAgo } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import { Modal } from "@/components/ui/Modal";
+import { BottomSheet } from "@/components/ui/BottomSheet";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { DemoToken } from "@/lib/types";
 import {
   Wallet,
   Send,
@@ -20,6 +21,7 @@ import {
   Activity,
   ArrowUpRight,
   ArrowDownLeft,
+  ChevronRight,
 } from "lucide-react";
 
 export default function WalletPage() {
@@ -31,6 +33,7 @@ export default function WalletPage() {
     portfolioValueUSD,
     tokens,
     transactions,
+    stakingPositions,
     sendTokens,
     setWalletModalOpen,
     txStage,
@@ -39,15 +42,16 @@ export default function WalletPage() {
     metrics,
   } = useRonStore();
 
-  const [sendModalOpen, setSendModalOpen] = useState(false);
-  const [receiveModalOpen, setReceiveModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"TOKENS" | "ACTIVITY" | "STAKING">("TOKENS");
+  const [sendSheetOpen, setSendSheetOpen] = useState(false);
+  const [receiveSheetOpen, setReceiveSheetOpen] = useState(false);
+  const [tokenDetailSheetOpen, setTokenDetailSheetOpen] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<DemoToken>(tokens[0]);
+
   const [recipientAddress, setRecipientAddress] = useState("");
   const [sendAmount, setSendAmount] = useState("");
-  const [selectedTokenSymbol, setSelectedTokenSymbol] = useState("RON");
   const [copied, setCopied] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-
-  const selectedToken = tokens.find((t) => t.symbol === selectedTokenSymbol) || tokens[0];
 
   const handleExecuteSend = async () => {
     setSendError(null);
@@ -56,7 +60,7 @@ export default function WalletPage() {
       setSendError("Please provide a valid recipient address and amount.");
       return;
     }
-    const res = await sendTokens(recipientAddress, amt, selectedTokenSymbol);
+    const res = await sendTokens(recipientAddress, amt, selectedToken.symbol);
     if (!res.success) {
       setSendError(res.error || "Transfer failed");
     }
@@ -68,240 +72,228 @@ export default function WalletPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const openTokenDetail = (tok: DemoToken) => {
+    setSelectedToken(tok);
+    setTokenDetailSheetOpen(true);
+  };
+
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10 font-mono text-xs">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/[0.08]">
-        <div>
-          <div className="flex items-center gap-2 text-ron-cyan text-xs font-bold mb-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-ron-green" />
-            <span className="mono-label text-[10px]">SOVEREIGN ACCOUNT MANAGER</span>
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 sm:space-y-10 font-mono text-xs">
+      {/* Sovereign Account Header Profile */}
+      <div className="surface-type-c tech-corner-tl tech-corner-br p-5 sm:p-8 space-y-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-ron-green animate-pulse" />
+            <span className="mono-label text-[10px] text-ron-cyan font-bold uppercase">
+              RON MAINNET V2.4
+            </span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-white font-sans tracking-tight">
-            Sovereign Wallet
-          </h1>
-        </div>
 
-        {/* Address Badge */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-[4px] bg-black/60 border border-white/10">
-            <span className="w-2 h-2 rounded-full bg-ron-green" />
-            <span className="text-white font-bold mono-data">{formatAddress(walletAddress, 8, 6)}</span>
-            <button
-              onClick={handleCopyAddress}
-              className="p-1 text-ron-muted hover:text-white transition-colors"
-              title="Copy Address"
-            >
-              <Copy className="w-3.5 h-3.5" />
-            </button>
+          <div
+            onClick={handleCopyAddress}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] bg-white/[0.04] border border-white/10 text-white cursor-pointer select-none active:scale-95 transition-transform"
+          >
+            <span className="mono-data text-[11px] font-bold">{formatAddress(walletAddress, 6, 4)}</span>
+            <Copy className="w-3 h-3 text-ron-dim" />
           </div>
         </div>
-      </div>
 
-      {/* Portfolio Balance Strip (Surface Type A) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="p-4 surface-type-a space-y-1">
-          <span className="mono-label text-[9px] uppercase">TOTAL ESTIMATED PORTFOLIO</span>
-          <span className="text-2xl font-bold text-white block mono-data">
-            {formatCurrency(portfolioValueUSD, 2)}
-          </span>
-          <span className="text-[10px] text-ron-green">+4.82% 24h</span>
+        {/* Portfolio Value Display */}
+        <div className="space-y-1">
+          <span className="mono-label text-[10px] uppercase text-ron-dim">TOTAL PORTFOLIO VALUE</span>
+          <div className="flex items-baseline gap-3">
+            <span className="text-3xl sm:text-5xl font-black text-white font-sans tracking-tight mono-data">
+              {formatCurrency(portfolioValueUSD, 2)}
+            </span>
+            <span className="text-xs font-bold text-ron-green font-mono">
+              +4.82% 24h
+            </span>
+          </div>
         </div>
 
-        <div className="p-4 surface-type-a space-y-1">
-          <span className="mono-label text-[9px] uppercase">LIQUID RON BALANCE</span>
-          <span className="text-2xl font-bold text-ron-cyan block mono-data">
-            {formatNumber(ronBalance, 2)} RON
-          </span>
-          <span className="text-[10px] text-ron-muted mono-data">
-            {formatCurrency(ronBalance * metrics.ronPrice, 2)}
-          </span>
-        </div>
-
-        <div className="p-4 surface-type-a space-y-1">
-          <span className="mono-label text-[9px] uppercase">STAKED RON</span>
-          <span className="text-2xl font-bold text-ron-violet block mono-data">
-            {formatNumber(stakedBalance, 2)} RON
-          </span>
-          <span className="text-[10px] text-ron-cyan">18.42% Compounding APR</span>
-        </div>
-
-        <div className="p-4 surface-type-a space-y-1">
-          <span className="mono-label text-[9px] uppercase">MAINNET NETWORK</span>
-          <span className="text-2xl font-bold text-ron-green block">RON MAINNET</span>
-          <span className="text-[10px] text-ron-dim">Chain ID: 2026</span>
-        </div>
-      </div>
-
-      {/* Quick Action Buttons */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant="primary"
-          size="md"
-          onClick={() => {
-            resetTxStage();
-            setSendError(null);
-            setSendModalOpen(true);
-          }}
-          leftIcon={<Send className="w-3.5 h-3.5 text-black" />}
-        >
-          SEND ASSETS
-        </Button>
-
-        <Button
-          variant="secondary"
-          size="md"
-          onClick={() => setReceiveModalOpen(true)}
-          leftIcon={<QrCode className="w-3.5 h-3.5 text-ron-cyan" />}
-        >
-          RECEIVE
-        </Button>
-
-        <Link href="/swap">
-          <Button
-            variant="secondary"
-            size="md"
-            leftIcon={<ArrowDownUp className="w-3.5 h-3.5 text-ron-violet" />}
+        {/* Quick Action 4-Button Grid (Thumb Reachable) */}
+        <div className="grid grid-cols-4 gap-2 pt-2 border-t border-white/[0.08]">
+          <button
+            onClick={() => {
+              resetTxStage();
+              setSendError(null);
+              setSendSheetOpen(true);
+            }}
+            className="py-3 px-1 rounded-[6px] bg-white text-black font-bold flex flex-col items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-transform"
           >
-            SWAP TOKENS
-          </Button>
-        </Link>
+            <Send className="w-4 h-4 text-black" />
+            <span className="text-[10px] tracking-wider font-mono uppercase">SEND</span>
+          </button>
 
-        <Link href="/stake">
-          <Button
-            variant="secondary"
-            size="md"
-            leftIcon={<Lock className="w-3.5 h-3.5 text-ron-green" />}
+          <button
+            onClick={() => setReceiveSheetOpen(true)}
+            className="py-3 px-1 rounded-[6px] bg-ron-elevated border border-white/10 text-white font-bold flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-transform hover:border-ron-cyan"
           >
-            STAKE RON
-          </Button>
-        </Link>
-      </div>
+            <QrCode className="w-4 h-4 text-ron-cyan" />
+            <span className="text-[10px] tracking-wider font-mono uppercase">RECEIVE</span>
+          </button>
 
-      {/* Multi-Asset Holdings Table (Surface Type B with Tech Corners) */}
-      <div className="surface-type-b tech-corner-tl tech-corner-br p-6 space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-          <h3 className="font-bold text-white uppercase tracking-wider text-xs">Token Balances</h3>
-          <span className="text-ron-dim">{tokens.length} Assets</span>
-        </div>
+          <Link
+            href="/swap"
+            className="py-3 px-1 rounded-[6px] bg-ron-elevated border border-white/10 text-white font-bold flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-transform hover:border-ron-violet"
+          >
+            <ArrowDownUp className="w-4 h-4 text-ron-violet" />
+            <span className="text-[10px] tracking-wider font-mono uppercase">SWAP</span>
+          </Link>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left font-mono text-xs">
-            <thead className="bg-black/80 border-b border-white/[0.08] text-ron-dim uppercase tracking-wider text-[9.5px]">
-              <tr>
-                <th className="py-3 px-4">ASSET</th>
-                <th className="py-3 px-4">PRICE</th>
-                <th className="py-3 px-4">BALANCE</th>
-                <th className="py-3 px-4">TOTAL VALUE</th>
-                <th className="py-3 px-4">24H CHANGE</th>
-                <th className="py-3 px-4 text-right">ACTION</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.04] text-ron-muted">
-              {tokens.map((token) => {
-                const currentPrice = token.symbol === "RON" ? metrics.ronPrice : token.price;
-                const valueUSD = token.balance * currentPrice;
-                return (
-                  <tr key={token.symbol} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-white flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-[4px] bg-white/[0.04] border border-white/10 flex items-center justify-center font-bold text-[10px] text-ron-cyan">
-                        {token.symbol.slice(0, 1)}
-                      </span>
-                      <span>{token.name} ({token.symbol})</span>
-                    </td>
-                    <td className="py-3.5 px-4 mono-data">{formatCurrency(currentPrice, 3)}</td>
-                    <td className="py-3.5 px-4 text-white font-bold mono-data">
-                      {formatNumber(token.balance, 4)} {token.symbol}
-                    </td>
-                    <td className="py-3.5 px-4 text-ron-cyan font-bold mono-data">{formatCurrency(valueUSD, 2)}</td>
-                    <td className="py-3.5 px-4 text-ron-green font-bold mono-data">+{token.change24h}%</td>
-                    <td className="py-3.5 px-4 text-right">
-                      <Link href="/swap">
-                        <Button variant="ghost" size="sm" className="text-[10px]">
-                          SWAP
-                        </Button>
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Account Transaction History */}
-      <div className="surface-type-b tech-corner-tl tech-corner-br p-6 space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-          <h3 className="font-bold text-white uppercase tracking-wider text-xs">Recent Account Activity</h3>
-          <Link href="/explorer" className="text-ron-cyan hover:underline text-[11px]">
-            View All in Explorer
+          <Link
+            href="/stake"
+            className="py-3 px-1 rounded-[6px] bg-ron-elevated border border-white/10 text-white font-bold flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-transform hover:border-ron-green"
+          >
+            <Lock className="w-4 h-4 text-ron-green" />
+            <span className="text-[10px] tracking-wider font-mono uppercase">STAKE</span>
           </Link>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left font-mono text-xs">
-            <thead className="bg-black/80 border-b border-white/[0.08] text-ron-dim uppercase tracking-wider text-[9.5px]">
-              <tr>
-                <th className="py-3 px-4">TX HASH</th>
-                <th className="py-3 px-4">TYPE</th>
-                <th className="py-3 px-4">VALUE</th>
-                <th className="py-3 px-4">FEE</th>
-                <th className="py-3 px-4">STATUS</th>
-                <th className="py-3 px-4 text-right">TIME</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.04] text-ron-muted">
-              {transactions
-                .filter((tx) => tx.from === walletAddress || tx.to === walletAddress || true)
-                .slice(0, 8)
-                .map((tx) => (
-                  <tr key={tx.hash} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3 px-4 text-ron-cyan font-bold mono-data">
-                      <Link href={`/explorer/tx/${tx.hash}`} className="hover:underline">
-                        {formatAddress(tx.hash, 8, 4)}
-                      </Link>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="px-1.5 py-0.5 rounded-[2px] bg-white/[0.04] border border-white/[0.08] text-[9.5px] font-bold text-white">
-                        {tx.type}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-bold text-white mono-data">
-                      {formatNumber(tx.value, 2)} {tx.tokenSymbol}
-                    </td>
-                    <td className="py-3 px-4 mono-data">{tx.networkFee} RON</td>
-                    <td className="py-3 px-4">
-                      <StatusBadge status={tx.status} size="sm" />
-                    </td>
-                    <td className="py-3 px-4 text-right text-ron-dim text-[10.5px] mono-data">
-                      {formatTimeAgo(tx.timestamp)}
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
       </div>
 
-      {/* Send Modal */}
-      <Modal
-        isOpen={sendModalOpen}
-        onClose={() => setSendModalOpen(false)}
-        title="Send Crypto Assets"
-        subtitle="Sub-second zero-knowledge value transfer across RON Mainnet"
+      {/* Segmented Tab Navigation */}
+      <div className="flex items-center p-1 rounded-[6px] bg-black/60 border border-white/10">
+        {(["TOKENS", "ACTIVITY", "STAKING"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-2 rounded-[4px] font-mono text-[11px] font-bold uppercase tracking-wider transition-colors ${
+              activeTab === tab
+                ? "bg-ron-violet text-white shadow-md"
+                : "text-ron-muted hover:text-white"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab 1: Tokens List */}
+      {activeTab === "TOKENS" && (
+        <div className="space-y-2">
+          {tokens.map((tok) => {
+            const price = tok.symbol === "RON" ? metrics.ronPrice : tok.price;
+            const valUSD = tok.balance * price;
+            return (
+              <div
+                key={tok.symbol}
+                onClick={() => openTokenDetail(tok)}
+                className="p-3.5 rounded-[8px] surface-type-b hover:border-ron-cyan/40 transition-all flex items-center justify-between cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-[6px] bg-white/[0.04] border border-white/10 flex items-center justify-center font-bold text-xs text-ron-cyan">
+                    {tok.symbol.slice(0, 1)}
+                  </div>
+                  <div>
+                    <span className="font-bold text-white text-xs block">{tok.name}</span>
+                    <span className="text-[10px] text-ron-dim mono-data">
+                      {formatNumber(tok.balance, 3)} {tok.symbol}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-right flex items-center gap-2">
+                  <div>
+                    <span className="text-xs font-bold text-white block mono-data">
+                      {formatCurrency(valUSD, 2)}
+                    </span>
+                    <span className="text-[10px] text-ron-green font-bold mono-data">
+                      +{tok.change24h || 4.8}%
+                    </span>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-ron-dim" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Tab 2: Activity List */}
+      {activeTab === "ACTIVITY" && (
+        <div className="space-y-2">
+          {transactions.slice(0, 10).map((tx) => (
+            <Link
+              key={tx.hash}
+              href={`/explorer/tx/${tx.hash}`}
+              className="p-3.5 rounded-[8px] surface-type-b hover:border-ron-violet/40 transition-all flex items-center justify-between block active:scale-[0.99]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-[4px] bg-black/60 border border-white/10 text-center font-bold text-[9px] text-white">
+                  {tx.type}
+                </div>
+                <div>
+                  <span className="font-bold text-white text-xs block mono-data">
+                    {formatAddress(tx.hash, 6, 4)}
+                  </span>
+                  <span className="text-[10px] text-ron-dim mono-data">{formatTimeAgo(tx.timestamp)}</span>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <span className="text-xs font-bold text-ron-cyan block mono-data">
+                  {formatNumber(tx.value, 2)} {tx.tokenSymbol}
+                </span>
+                <StatusBadge status={tx.status} size="sm" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Tab 3: Staking Positions */}
+      {activeTab === "STAKING" && (
+        <div className="space-y-3">
+          {stakingPositions.map((pos) => (
+            <div key={pos.id} className="p-4 rounded-[8px] surface-type-b space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-white text-xs">{pos.validatorName}</span>
+                <span className="px-2 py-0.5 rounded-[2px] bg-ron-green/10 text-ron-green font-bold text-[10px]">
+                  {pos.apy}% APY
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[11px] pt-2 border-t border-white/[0.06]">
+                <div>
+                  <span className="mono-label text-[9px] block">DELEGATED:</span>
+                  <span className="text-white font-bold mono-data">{formatNumber(pos.amount, 2)} RON</span>
+                </div>
+                <div>
+                  <span className="mono-label text-[9px] block">ACCRUED YIELD:</span>
+                  <span className="text-ron-green font-bold mono-data">+{formatNumber(pos.accruedRewards, 4)} RON</span>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center gap-2">
+                <Link href="/stake" className="w-full">
+                  <Button variant="secondary" size="sm" className="w-full text-xs">
+                    MANAGE STAKE
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Send Bottom Sheet */}
+      <BottomSheet
+        isOpen={sendSheetOpen}
+        onClose={() => setSendSheetOpen(false)}
+        title={`Send ${selectedToken.symbol}`}
+        subtitle="Sub-second cryptographic transfer on RON Mainnet"
       >
-        <div className="space-y-4 font-mono text-xs">
+        <div className="space-y-4">
           {txStage === "CONFIRMED" && activeTxReceipt ? (
-            <div className="p-6 surface-type-d space-y-4 text-left">
-              <div className="flex items-center gap-2 text-ron-green font-bold tracking-wider">
+            <div className="p-5 surface-type-d space-y-3 text-left">
+              <div className="flex items-center gap-2 text-ron-green font-bold text-xs">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>TRANSFER CONFIRMED</span>
               </div>
-              <div className="space-y-1.5 text-ron-muted text-[11px]">
+              <div className="space-y-1 text-ron-muted text-[11px]">
                 <div className="flex justify-between">
                   <span>AMOUNT:</span>
-                  <span className="text-white font-bold mono-data">{sendAmount} {selectedTokenSymbol}</span>
+                  <span className="text-white font-bold mono-data">{sendAmount} {selectedToken.symbol}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>RECIPIENT:</span>
@@ -317,7 +309,7 @@ export default function WalletPage() {
                 size="sm"
                 onClick={() => {
                   resetTxStage();
-                  setSendModalOpen(false);
+                  setSendSheetOpen(false);
                 }}
                 className="w-full text-xs"
               >
@@ -326,23 +318,6 @@ export default function WalletPage() {
             </div>
           ) : (
             <div className="space-y-3.5">
-              {/* Asset Select */}
-              <div className="space-y-1">
-                <label className="mono-label text-[9.5px]">SELECT ASSET</label>
-                <select
-                  value={selectedTokenSymbol}
-                  onChange={(e) => setSelectedTokenSymbol(e.target.value)}
-                  className="w-full p-2.5 rounded-[4px] bg-black/80 border border-white/10 text-white font-mono text-xs focus:outline-none"
-                >
-                  {tokens.map((t) => (
-                    <option key={t.symbol} value={t.symbol}>
-                      {t.name} ({t.symbol}) — Balance: {formatNumber(t.balance, 2)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Recipient Input */}
               <div className="space-y-1">
                 <label className="mono-label text-[9.5px]">RECIPIENT ADDRESS</label>
                 <input
@@ -350,27 +325,26 @@ export default function WalletPage() {
                   value={recipientAddress}
                   onChange={(e) => setRecipientAddress(e.target.value)}
                   placeholder="0x..."
-                  className="w-full p-2.5 rounded-[4px] bg-black/80 border border-white/10 text-white font-mono text-xs focus:outline-none"
+                  className="w-full p-3 rounded-[6px] bg-black/80 border border-white/10 text-white font-mono text-xs focus:outline-none"
                 />
               </div>
 
-              {/* Amount Input */}
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <label className="mono-label text-[9.5px]">AMOUNT</label>
-                  <span className="text-ron-dim">MAX: {selectedToken.balance}</span>
+                  <span className="text-ron-dim">BAL: {selectedToken.balance}</span>
                 </div>
-                <div className="flex items-center gap-2 p-2 surface-type-a">
+                <div className="flex items-center gap-2 p-2.5 surface-type-a">
                   <input
                     type="number"
                     value={sendAmount}
                     onChange={(e) => setSendAmount(e.target.value)}
                     placeholder="0.0"
-                    className="w-full bg-transparent text-lg font-bold text-white font-mono focus:outline-none mono-data"
+                    className="w-full bg-transparent text-xl font-bold text-white font-mono focus:outline-none mono-data"
                   />
                   <button
                     onClick={() => setSendAmount(selectedToken.balance.toString())}
-                    className="px-2 py-0.5 rounded-[2px] bg-white/10 text-[10px] text-ron-cyan font-bold"
+                    className="px-2.5 py-1 rounded-[3px] bg-white/10 text-xs text-ron-cyan font-bold"
                   >
                     MAX
                   </button>
@@ -381,14 +355,14 @@ export default function WalletPage() {
                 <p className="text-ron-red text-[11px] font-bold">{sendError}</p>
               )}
 
-              <div className="p-2.5 surface-type-a space-y-1 text-ron-dim text-[10.5px]">
+              <div className="p-3 surface-type-a space-y-1 text-ron-dim text-[10.5px]">
                 <div className="flex justify-between">
                   <span>ESTIMATED GAS:</span>
                   <span className="text-white">0.00042 RON ($0.08)</span>
                 </div>
                 <div className="flex justify-between">
                   <span>FINALITY:</span>
-                  <span className="text-ron-green">0.42s Sub-second</span>
+                  <span className="text-ron-green font-bold">0.42s Sub-second</span>
                 </div>
               </div>
 
@@ -397,60 +371,85 @@ export default function WalletPage() {
                 size="lg"
                 onClick={handleExecuteSend}
                 isLoading={txStage !== "IDLE" && txStage !== "CONFIRMED"}
-                className="w-full text-xs font-mono"
+                className="w-full text-xs font-mono h-12"
               >
                 {txStage === "PREPARING" && "PREPARING TRANSFER..."}
-                {txStage === "SIGNATURE" && "SIGNATURE VERIFIED..."}
+                {txStage === "SIGNATURE" && "SIGNING ENCLAVE..."}
                 {txStage === "BROADCASTING" && "BROADCASTING TO MEMPOOL..."}
                 {txStage === "VALIDATING" && "CONFIRMING WITH 184 HUBS..."}
-                {txStage === "IDLE" && `SEND ${selectedTokenSymbol}`}
+                {txStage === "IDLE" && `CONFIRM SEND ${selectedToken.symbol}`}
               </Button>
             </div>
           )}
         </div>
-      </Modal>
+      </BottomSheet>
 
-      {/* Receive Modal */}
-      <Modal
-        isOpen={receiveModalOpen}
-        onClose={() => setReceiveModalOpen(false)}
+      {/* Receive Bottom Sheet */}
+      <BottomSheet
+        isOpen={receiveSheetOpen}
+        onClose={() => setReceiveSheetOpen(false)}
         title="Receive Crypto Assets"
-        subtitle="Your sovereign account address on RON Mainnet"
+        subtitle="Your sovereign address on RON Mainnet"
       >
-        <div className="space-y-5 text-center font-mono text-xs">
-          {/* Simulated QR Box */}
-          <div className="w-44 h-44 mx-auto p-3 rounded-[6px] bg-white text-black flex flex-col items-center justify-center space-y-2 shadow-2xl">
+        <div className="space-y-4 text-center font-mono text-xs">
+          <div className="w-44 h-44 mx-auto p-3 rounded-[8px] bg-white text-black flex flex-col items-center justify-center space-y-2 shadow-2xl">
             <QrCode className="w-32 h-32 text-black" />
             <span className="text-[9px] font-black tracking-widest uppercase">RON MAINNET</span>
           </div>
 
-          <div className="p-3 surface-type-d text-left space-y-2">
-            <span className="mono-label text-[9px] text-ron-cyan block uppercase">SOVEREIGN ADDRESS</span>
-            <div className="flex items-center justify-between">
-              <span className="text-white font-bold text-[11px] break-all mono-data">{walletAddress}</span>
-              <button
-                onClick={handleCopyAddress}
-                className="ml-2 p-1.5 rounded-[3px] bg-white/10 hover:bg-white/20 text-white shrink-0"
-              >
-                <Copy className="w-3.5 h-3.5" />
-              </button>
-            </div>
+          <div className="p-3 surface-type-d text-left space-y-1.5">
+            <span className="mono-label text-[9px] text-ron-cyan uppercase block">SOVEREIGN ADDRESS</span>
+            <span className="text-white font-bold text-xs break-all mono-data block">{walletAddress}</span>
           </div>
-
-          <p className="text-ron-dim text-[10.5px] leading-relaxed">
-            Important: Only send assets supported on RON Network or compatible bridges to this address.
-          </p>
 
           <Button
             variant="primary"
-            size="md"
+            size="lg"
             onClick={handleCopyAddress}
-            className="w-full text-xs"
+            className="w-full text-xs h-12"
           >
-            {copied ? "ADDRESS COPIED" : "COPY WALLET ADDRESS"}
+            {copied ? "COPIED TO CLIPBOARD" : "COPY WALLET ADDRESS"}
           </Button>
         </div>
-      </Modal>
+      </BottomSheet>
+
+      {/* Token Detail Bottom Sheet */}
+      <BottomSheet
+        isOpen={tokenDetailSheetOpen}
+        onClose={() => setTokenDetailSheetOpen(false)}
+        title={`${selectedToken.name} (${selectedToken.symbol})`}
+        subtitle="Asset Balance & Quick Actions"
+      >
+        <div className="space-y-4">
+          <div className="p-4 surface-type-d space-y-1 text-center">
+            <span className="mono-label text-[9px] uppercase">YOUR BALANCE</span>
+            <span className="text-3xl font-black text-white block mono-data">
+              {formatNumber(selectedToken.balance, 4)} {selectedToken.symbol}
+            </span>
+            <span className="text-xs text-ron-cyan mono-data">
+              {formatCurrency(selectedToken.balance * (selectedToken.symbol === "RON" ? metrics.ronPrice : selectedToken.price), 2)}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-2">
+            <button
+              onClick={() => {
+                setTokenDetailSheetOpen(false);
+                setSendSheetOpen(true);
+              }}
+              className="py-3 rounded-[6px] bg-white text-black font-bold text-xs"
+            >
+              SEND {selectedToken.symbol}
+            </button>
+            <Link
+              href="/swap"
+              className="py-3 rounded-[6px] bg-ron-violet/20 border border-ron-violet/40 text-white font-bold text-xs flex items-center justify-center"
+            >
+              SWAP {selectedToken.symbol}
+            </Link>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { NotificationCenter } from "@/components/layout/NotificationCenter";
 import { BootSequence } from "@/components/layout/BootSequence";
 import { CustomCursor } from "@/components/layout/CustomCursor";
 import { DiagnosticsModal } from "@/components/layout/DiagnosticsModal";
+import { MobileNav } from "@/components/layout/MobileNav";
 
 export const metadata: Metadata = {
   title: {
@@ -75,8 +76,9 @@ export default function RootLayout({
           <BootSequence />
           <CustomCursor />
           <Navbar />
-          <main className="flex-1 pt-16 sm:pt-20">{children}</main>
+          <main className="flex-1 pt-16 sm:pt-20 pb-20 md:pb-0">{children}</main>
           <Footer />
+          <MobileNav />
           <CommandCenter />
           <WalletModal />
           <NotificationCenter />

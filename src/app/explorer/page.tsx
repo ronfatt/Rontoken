@@ -21,6 +21,7 @@ export default function ExplorerPage() {
   const { blocks, transactions, metrics, walletAddress } = useRonStore();
   const [searchInput, setSearchInput] = useState("");
   const [detectedType, setDetectedType] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<"TRANSACTIONS" | "BLOCKS">("TRANSACTIONS");
 
   const handleInputChange = (val: string) => {
     setSearchInput(val);
@@ -57,84 +58,110 @@ export default function ExplorerPage() {
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10 font-mono text-xs">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 sm:space-y-10 font-mono text-xs pb-24 sm:pb-12">
       {/* Header & Search Infrastructure */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div>
           <div className="flex items-center gap-2 text-ron-cyan text-xs font-bold mb-1">
             <Compass className="w-3.5 h-3.5" />
             <span className="mono-label text-[10px]">CONSENSUS LEDGER TELEMETRY</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-white font-sans tracking-tight">
-            RON Blockchain Explorer
+          <h1 className="text-2xl sm:text-4xl font-black text-white font-sans tracking-tight">
+            RON Explorer
           </h1>
-          <p className="text-xs sm:text-sm text-ron-muted mt-1 font-sans">
-            Authoritative real-time indexing of sub-second blocks, sovereign addresses, and transactions on RON Mainnet.
+          <p className="text-xs text-ron-muted mt-1 font-sans">
+            Authoritative real-time indexing of blocks, addresses, and transactions.
           </p>
         </div>
 
-        {/* Search Bar Bar */}
+        {/* Search Bar */}
         <form onSubmit={handleSearchSubmit} className="relative">
           <div className="relative flex items-center surface-type-c tech-corner-tl tech-corner-br shadow-2xl p-1.5">
-            <Search className="w-4 h-4 text-ron-cyan ml-3 shrink-0" />
+            <Search className="w-4 h-4 text-ron-cyan ml-2.5 shrink-0" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => handleInputChange(e.target.value)}
-              placeholder="Search by Block Number (#248934), Tx Hash (0x...), Address (0x...), or Token..."
-              className="w-full bg-transparent px-3 py-2.5 text-xs sm:text-sm text-white placeholder-ron-muted focus:outline-none"
+              placeholder="Search Block (#248934), Tx Hash, or Address..."
+              className="w-full bg-transparent px-2.5 py-2 text-xs text-white placeholder-ron-muted focus:outline-none"
             />
             {detectedType && (
               <span className="hidden sm:inline-block px-2 py-0.5 rounded-[2px] bg-ron-violet/20 border border-ron-violet/40 text-ron-cyan text-[9.5px] font-bold mr-2 whitespace-nowrap">
                 {detectedType}
               </span>
             )}
-            <Button variant="primary" size="md" type="submit" className="text-xs shrink-0">
+            <Button variant="primary" size="sm" type="submit" className="text-xs shrink-0">
               SEARCH
             </Button>
           </div>
         </form>
       </div>
 
-      {/* Real-time Explorer KPI Strip (Surface Type A) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-4 surface-type-a space-y-1">
-          <span className="mono-label text-[9px] uppercase">LATEST BLOCK HEIGHT</span>
-          <span className="text-2xl font-bold text-white block mono-data">
+      {/* Real-time Explorer KPI Strip (2x2 on mobile) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="p-3.5 surface-type-a space-y-0.5">
+          <span className="mono-label text-[9px] uppercase">LATEST BLOCK</span>
+          <span className="text-xl sm:text-2xl font-bold text-white block mono-data">
             #{metrics.blockHeight.toLocaleString()}
           </span>
           <span className="text-[10px] text-ron-green">0.42s Finality</span>
         </div>
 
-        <div className="p-4 surface-type-a space-y-1">
-          <span className="mono-label text-[9px] uppercase">TOTAL TRANSACTIONS</span>
-          <span className="text-2xl font-bold text-ron-cyan block mono-data">
+        <div className="p-3.5 surface-type-a space-y-0.5">
+          <span className="mono-label text-[9px] uppercase">TOTAL TXS</span>
+          <span className="text-xl sm:text-2xl font-bold text-ron-cyan block mono-data">
             {metrics.totalTransactions.toLocaleString()}
           </span>
           <span className="text-[10px] text-ron-dim">{metrics.currentTps.toLocaleString()} TPS</span>
         </div>
 
-        <div className="p-4 surface-type-a space-y-1">
-          <span className="mono-label text-[9px] uppercase">ACTIVE VALIDATOR HUBS</span>
-          <span className="text-2xl font-bold text-ron-violet block mono-data">
+        <div className="p-3.5 surface-type-a space-y-0.5">
+          <span className="mono-label text-[9px] uppercase">VALIDATORS</span>
+          <span className="text-xl sm:text-2xl font-bold text-ron-violet block mono-data">
             {metrics.activeValidators}
           </span>
-          <span className="text-[10px] text-ron-green">100% Consensus Sync</span>
+          <span className="text-[10px] text-ron-green">100% Sync</span>
         </div>
 
-        <div className="p-4 surface-type-a space-y-1">
-          <span className="mono-label text-[9px] uppercase">BASE GAS PRICE</span>
-          <span className="text-2xl font-bold text-ron-green block mono-data">
+        <div className="p-3.5 surface-type-a space-y-0.5">
+          <span className="mono-label text-[9px] uppercase">BASE GAS</span>
+          <span className="text-xl sm:text-2xl font-bold text-ron-green block mono-data">
             {metrics.avgGasGwei} GWEI
           </span>
-          <span className="text-[10px] text-ron-dim">$0.08 Avg Fee</span>
+          <span className="text-[10px] text-ron-dim">$0.08 Avg</span>
         </div>
       </div>
 
-      {/* Dual Feed Grid: Latest Blocks & Latest Transactions */}
+      {/* Mobile Segmented View Switcher */}
+      <div className="lg:hidden flex items-center p-1 rounded-[6px] bg-black/60 border border-white/10">
+        <button
+          onClick={() => setMobileTab("TRANSACTIONS")}
+          className={`flex-1 py-2 rounded-[4px] font-mono text-[11px] font-bold uppercase transition-colors ${
+            mobileTab === "TRANSACTIONS"
+              ? "bg-ron-violet text-white"
+              : "text-ron-muted"
+          }`}
+        >
+          LATEST TRANSACTIONS
+        </button>
+        <button
+          onClick={() => setMobileTab("BLOCKS")}
+          className={`flex-1 py-2 rounded-[4px] font-mono text-[11px] font-bold uppercase transition-colors ${
+            mobileTab === "BLOCKS"
+              ? "bg-ron-violet text-white"
+              : "text-ron-muted"
+          }`}
+        >
+          LATEST BLOCKS
+        </button>
+      </div>
+
+      {/* Dual Feed Grid (Desktop: 2 columns; Mobile: tabbed cards) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Latest Blocks */}
-        <div className="surface-type-b tech-corner-tl p-6 space-y-4">
+        <div className={`surface-type-b tech-corner-tl p-5 sm:p-6 space-y-4 ${
+          mobileTab !== "BLOCKS" ? "hidden lg:block" : ""
+        }`}>
           <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
             <div className="flex items-center gap-2 font-bold text-white uppercase tracking-wider text-xs">
               <Layers className="w-3.5 h-3.5 text-ron-cyan" />
@@ -184,7 +211,9 @@ export default function ExplorerPage() {
         </div>
 
         {/* Latest Transactions */}
-        <div className="surface-type-b tech-corner-br p-6 space-y-4">
+        <div className={`surface-type-b tech-corner-br p-5 sm:p-6 space-y-4 ${
+          mobileTab !== "TRANSACTIONS" ? "hidden lg:block" : ""
+        }`}>
           <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
             <div className="flex items-center gap-2 font-bold text-white uppercase tracking-wider text-xs">
               <Activity className="w-3.5 h-3.5 text-ron-violet" />
@@ -208,11 +237,10 @@ export default function ExplorerPage() {
                       href={`/explorer/tx/${tx.hash}`}
                       className="text-white font-bold text-xs hover:text-ron-cyan hover:underline mono-data block"
                     >
-                      {formatAddress(tx.hash, 8, 4)}
+                      {formatAddress(tx.hash, 6, 4)}
                     </Link>
                     <div className="flex items-center gap-2 text-[10px] text-ron-dim">
                       <span>From: {formatAddress(tx.from, 4, 4)}</span>
-                      <span>To: {formatAddress(tx.to, 4, 4)}</span>
                     </div>
                   </div>
                 </div>

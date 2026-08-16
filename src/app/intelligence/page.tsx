@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRonStore } from "@/lib/store";
 import { formatNumber, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -14,25 +15,33 @@ import {
   Layers,
   Radio,
   Lock,
+  ArrowRight,
 } from "lucide-react";
 
-const NAV_ITEMS = [
-  { id: "overview", name: "Overview", icon: Activity },
-  { id: "portfolio", name: "Portfolio Analyzer", icon: Layers },
-  { id: "staking", name: "Staking Inspection", icon: Lock },
-  { id: "network", name: "Network Health", icon: Radio },
-  { id: "liquidity", name: "Liquidity Depth", icon: Zap },
-  { id: "validators", name: "Validator Risk", icon: ShieldCheck },
+const QUICK_CHIPS = [
+  { label: "MY PORTFOLIO", query: "Analyze my portfolio" },
+  { label: "STAKING YIELD", query: "Analyze my staking positions" },
+  { label: "NETWORK RISK", query: "/risk" },
+  { label: "LIVE TPS", query: "/network" },
+  { label: "LIQUIDITY DEPTH", query: "/liquidity" },
+  { label: "DAO PROPOSALS", query: "Show active proposals" },
 ];
 
 export default function IntelligencePage() {
   const { metrics, ronBalance, stakedBalance, portfolioValueUSD, stakingPositions, validators, proposals } = useRonStore();
-  const [activeTab, setActiveTab] = useState("overview");
   const [chatInput, setChatInput] = useState("");
-  const [messages, setMessages] = useState<Array<{ sender: "AI" | "USER"; text: string; time: string }>>([
+  const [messages, setMessages] = useState<Array<{
+    sender: "AI" | "USER";
+    title?: string;
+    text: string;
+    metrics?: Record<string, string>;
+    cta?: { label: string; href: string };
+    time: string;
+  }>>([
     {
       sender: "AI",
-      text: "RON Intelligence initialized. Autonomous cognitive auditor connected to 184 validators. Ask 'Analyze my portfolio', 'Analyze my staking positions', or query any network state.",
+      title: "COGNITIVE PROTOCOL AUDITOR",
+      text: "RON Intelligence initialized. Autonomous cognitive telemetry connected across 184 validators with 0.42s state observation. Select a prompt or ask any question.",
       time: "10:00",
     },
   ]);
@@ -46,203 +55,192 @@ export default function IntelligencePage() {
     setChatInput("");
     setIsThinking(true);
 
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 500));
 
-    let aiReply = "Telemetry analyzed. All consensus metrics are nominal.";
+    let aiReplyTitle = "NETWORK TELEMETRY";
+    let aiReplyText = "Telemetry analyzed. All consensus metrics are nominal.";
+    let aiMetrics: Record<string, string> | undefined = undefined;
+    let aiCta: { label: string; href: string } | undefined = undefined;
+
     const lower = text.toLowerCase();
 
     if (lower.includes("portfolio") || lower.includes("balance") || lower.includes("my account")) {
-      aiReply = `Portfolio Analysis: Your total portfolio is valued at ${formatCurrency(portfolioValueUSD, 2)}. Liquid balance: ${formatNumber(ronBalance, 2)} RON ($${formatNumber(ronBalance * metrics.ronPrice, 2)}). Staked balance: ${formatNumber(stakedBalance, 2)} RON. Total DAO voting power: ${formatNumber(ronBalance + stakedBalance * 1.5, 0)} vRON. Zero unfinalized transactions in mempool.`;
+      aiReplyTitle = "SOVEREIGN PORTFOLIO ANALYSIS";
+      aiReplyText = `Your portfolio is valued at ${formatCurrency(portfolioValueUSD, 2)}. You maintain ${formatNumber(ronBalance, 2)} liquid RON and ${formatNumber(stakedBalance, 2)} staked RON across ${stakingPositions.length} validator hub(s). Total voting power is ${formatNumber(ronBalance + stakedBalance * 1.5, 0)} vRON. Zero unfinalized transactions in mempool.`;
+      aiMetrics = {
+        "PORTFOLIO VALUE": formatCurrency(portfolioValueUSD, 2),
+        "LIQUID RON": `${formatNumber(ronBalance, 2)} RON`,
+        "STAKED RON": `${formatNumber(stakedBalance, 2)} RON`,
+        "VOTING POWER": `${formatNumber(ronBalance + stakedBalance * 1.5, 0)} vRON`,
+      };
+      aiCta = { label: "VIEW FULL WALLET", href: "/wallet" };
     } else if (lower.includes("staking") || lower.includes("stake") || lower.includes("yield")) {
-      aiReply = `Staking Analysis: You have ${stakingPositions.length} active staking delegation(s) totaling ${formatNumber(stakedBalance, 2)} RON earning up to 18.42% APY. Accrued unclaimed rewards: +${formatNumber(stakingPositions.reduce((s, p) => s + p.accruedRewards, 0), 4)} RON. Slashing insurance status: 100% COVERED.`;
+      aiReplyTitle = "STAKING & YIELD INSPECTION";
+      const accrued = stakingPositions.reduce((s, p) => s + p.accruedRewards, 0);
+      aiReplyText = `You have ${stakingPositions.length} active delegation(s) totaling ${formatNumber(stakedBalance, 2)} RON earning up to 18.42% APY. Slashing insurance status is 100% protocol backed.`;
+      aiMetrics = {
+        "STAKED PRINCIPAL": `${formatNumber(stakedBalance, 2)} RON`,
+        "ACCRUED REWARDS": `+${formatNumber(accrued, 4)} RON`,
+        "MAX APY": "18.42%",
+        "STATUS": "INSURED",
+      };
+      aiCta = { label: "MANAGE STAKING", href: "/stake" };
     } else if (lower.includes("/network") || lower.includes("network") || lower.includes("tps")) {
-      aiReply = `Network State: OPTIMAL. Slot height #${metrics.blockHeight}. Throughput is currently ${metrics.currentTps.toLocaleString()} TPS with 0.42s finality across ${metrics.activeValidators} active validator clusters. Gas price: ${metrics.avgGasGwei} Gwei.`;
+      aiReplyTitle = "CONSENSUS & MEMPOOL TELEMETRY";
+      aiReplyText = `Consensus is operating at ${metrics.currentTps.toLocaleString()} TPS with 0.42s finality across 184 globally distributed validator clusters.`;
+      aiMetrics = {
+        "CURRENT TPS": `${metrics.currentTps.toLocaleString()} TPS`,
+        "FINALITY": "0.42s Sub-second",
+        "VALIDATORS": `${metrics.activeValidators} Active`,
+        "GAS TARGET": `${metrics.avgGasGwei} Gwei`,
+      };
+      aiCta = { label: "NETWORK NOC", href: "/network" };
     } else if (lower.includes("/risk") || lower.includes("risk") || lower.includes("security")) {
-      aiReply = `Risk Assessment: OPTIMAL (Score 99.8/100). Zero invalid ZK state proofs detected in the last 10,000 blocks. Slashing insurance cushion is funded with $22.5M reserve.`;
+      aiReplyTitle = "SECURITY & RISK ASSESSMENT";
+      aiReplyText = `Risk index is OPTIMAL (Score 99.8/100). Zero invalid ZK state proofs detected in the last 10,000 blocks. Slashing insurance cushion is funded with $22.5M reserve.`;
+      aiMetrics = {
+        "RISK SCORE": "99.8 / 100",
+        "EXPLOITS": "0 Detected",
+        "RESERVE FUND": "$22.5M Insured",
+      };
+      aiCta = { label: "VIEW NODE ATLAS", href: "/nodes" };
     } else if (lower.includes("/liquidity") || lower.includes("liquidity") || lower.includes("swap")) {
-      aiReply = `Liquidity Depth: $${(metrics.tvl / 1000000).toFixed(1)}M TVL across RON/USDT and RON/ETH AMM pools. Average execution slippage: 0.03%. Turing-AMM v2.4 route optimization active.`;
-    } else if (lower.includes("governance") || lower.includes("dao") || lower.includes("proposal")) {
-      aiReply = `Governance Summary: ${proposals.length} active DAO proposals on-chain. Top active proposal is ${proposals[0]?.id}: "${proposals[0]?.title}" with ${proposals[0]?.votes.yes}% YES approval. Quorum threshold met.`;
-    } else if (lower.includes("validator") || lower.includes("nodes")) {
-      aiReply = `Validator Telemetry: 184 synchronized clusters across 42 jurisdictions. Top cluster by stake is ${validators[0]?.name} (${formatNumber(validators[0]?.totalStake || 42800000, 0)} RON) with ${validators[0]?.uptime || 99.99}% uptime.`;
+      aiReplyTitle = "DEX LIQUIDITY DEPTH";
+      aiReplyText = `Aggregated TVL across Turing-AMM pools is $${(metrics.tvl / 1000000).toFixed(1)}M USD with average route slippage of 0.03%.`;
+      aiMetrics = {
+        "AMM TVL": `$${(metrics.tvl / 1000000).toFixed(1)}M`,
+        "AVG SLIPPAGE": "0.03%",
+        "ROUTING": "Turing-AMM v2.4",
+      };
+      aiCta = { label: "OPEN SWAP", href: "/swap" };
     } else {
-      aiReply = `RON Cognitive Agent processed: "${text}". Consensus verification confirms continuous 0.42s block settlement with 99.998% network uptime.`;
+      aiReplyTitle = "PROTOCOL OBSERVATION";
+      aiReplyText = `Telemetry query processed for "${text}". Blockchain state root #24893441 is verified with continuous 0.42s block settlement.`;
     }
 
-    const aiMsg = { sender: "AI" as const, text: aiReply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    const aiMsg = {
+      sender: "AI" as const,
+      title: aiReplyTitle,
+      text: aiReplyText,
+      metrics: aiMetrics,
+      cta: aiCta,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
     setMessages((prev) => [...prev, aiMsg]);
     setIsThinking(false);
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 font-mono text-xs">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 font-mono text-xs pb-28 sm:pb-12">
+      {/* Header Profile */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.08]">
         <div>
           <div className="flex items-center gap-2 text-ron-cyan text-xs font-bold mb-1">
             <Cpu className="w-3.5 h-3.5 text-ron-green" />
             <span className="mono-label text-[10px]">NEURAL PROTOCOL AUDITOR V2.4</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-white font-sans tracking-tight">
-            RON Intelligence Center
+          <h1 className="text-2xl sm:text-4xl font-black text-white font-sans tracking-tight">
+            RON Intelligence
           </h1>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-ron-green animate-pulse" />
-          <span className="text-ron-green font-bold text-[11px]">AUTONOMOUS COGNITION ACTIVE</span>
+          <span className="w-2 h-2 rounded-full bg-ron-green animate-pulse" />
+          <span className="text-ron-green font-bold text-[11px]">COGNITIVE CORE ACTIVE</span>
         </div>
       </div>
 
-      {/* 3-Zone Analytical Layout: Left Sub-nav, Center Telemetry, Right Assistant Terminal */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left Sub-nav (3 cols) */}
-        <div className="lg:col-span-3 space-y-1.5">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isSel = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 p-3 rounded-[4px] border text-left transition-all ${
-                  isSel
-                    ? "bg-ron-violet/20 border-ron-violet text-white font-bold"
-                    : "surface-type-a text-ron-muted hover:text-white"
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isSel ? "text-ron-cyan" : "text-ron-dim"}`} />
-                <span className="text-xs">{item.name}</span>
-              </button>
-            );
-          })}
+      {/* Horizontal Quick Prompt Chips (Scrollable on mobile) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+        {QUICK_CHIPS.map((chip) => (
+          <button
+            key={chip.label}
+            onClick={() => handleSendMessage(chip.query)}
+            className="px-3 py-1.5 rounded-full surface-type-a hover:surface-type-b hover:border-ron-cyan/40 text-white text-[10.5px] font-bold whitespace-nowrap active:scale-95 transition-all shrink-0"
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
 
-          <div className="p-4 surface-type-a space-y-2 mt-4">
-            <span className="mono-label text-[9px] uppercase block">PRESET QUERIES</span>
-            <div className="space-y-1 text-[11px] text-ron-cyan font-mono">
-              <p onClick={() => handleSendMessage("Analyze my portfolio")} className="cursor-pointer hover:underline">
-                &gt; Analyze my portfolio
-              </p>
-              <p onClick={() => handleSendMessage("Analyze my staking positions")} className="cursor-pointer hover:underline">
-                &gt; Analyze my staking positions
-              </p>
-              <p onClick={() => handleSendMessage("/network")} className="cursor-pointer hover:underline">
-                &gt; /network
-              </p>
-              <p onClick={() => handleSendMessage("/risk")} className="cursor-pointer hover:underline">
-                &gt; /risk
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Center Analytics Display (5 cols) */}
-        <div className="lg:col-span-5 p-6 surface-type-b tech-corner-tl space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-            <h3 className="font-bold text-white uppercase tracking-wider text-xs">
-              {NAV_ITEMS.find((n) => n.id === activeTab)?.name} Inspection
-            </h3>
-            <span className="text-ron-green text-[10px] font-bold">100% HEALTH</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 surface-type-a space-y-0.5">
-              <span className="mono-label text-[9px] uppercase block">MEMPOOL STRESS</span>
-              <span className="text-base font-bold text-ron-green block mono-data">
-                {metrics.currentTps.toLocaleString()} TPS
+      {/* Message Feed Display */}
+      <div className="space-y-3">
+        {messages.map((m, idx) => (
+          <div
+            key={idx}
+            className={`p-4 rounded-[8px] space-y-2.5 ${
+              m.sender === "USER"
+                ? "ml-auto bg-ron-violet/20 border border-ron-violet/40 text-white max-w-[85%]"
+                : "mr-auto surface-type-b text-ron-text max-w-[95%] sm:max-w-[85%]"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="mono-label text-[9px] font-bold text-ron-cyan">
+                {m.sender === "USER" ? "OPERATOR" : m.title || "RON COGNITIVE CORE"}
               </span>
-              <span className="text-[9.5px] text-ron-dim">51% Max Throughput</span>
+              <span className="text-[9px] text-ron-dim">{m.time}</span>
             </div>
 
-            <div className="p-3 surface-type-a space-y-0.5">
-              <span className="mono-label text-[9px] uppercase block">ANOMALY INDEX</span>
-              <span className="text-base font-bold text-ron-cyan block mono-data">0.00%</span>
-              <span className="text-[9.5px] text-ron-green">Zero exploits detected</span>
-            </div>
-
-            <div className="p-3 surface-type-a space-y-0.5">
-              <span className="mono-label text-[9px] uppercase block">CONSENSUS SYNC</span>
-              <span className="text-base font-bold text-ron-violet block mono-data">98.7%</span>
-              <span className="text-[9.5px] text-ron-dim">184 Nodes</span>
-            </div>
-
-            <div className="p-3 surface-type-a space-y-0.5">
-              <span className="mono-label text-[9px] uppercase block">SLOT DELAY</span>
-              <span className="text-base font-bold text-white block mono-data">0.04s</span>
-              <span className="text-[9.5px] text-ron-green">0.08 Gwei base</span>
-            </div>
-          </div>
-
-          <div className="p-4 surface-type-d space-y-2">
-            <span className="mono-label text-[9px] text-ron-cyan font-bold uppercase block">
-              LIVE STATE SYNTHESIS
-            </span>
-            <p className="text-ron-muted leading-relaxed text-[11px] font-sans">
-              Continuous neural auditor runs 48 algorithmic tests every block. Your sovereign account has{" "}
-              <strong className="text-white">{formatNumber(ronBalance, 2)} RON</strong> liquid and{" "}
-              <strong className="text-ron-cyan">{formatNumber(stakedBalance, 2)} RON</strong> actively staked.
+            <p className="font-sans text-xs leading-relaxed text-ron-text">
+              {m.text}
             </p>
-          </div>
-        </div>
 
-        {/* Right AI Terminal (4 cols) */}
-        <div className="lg:col-span-4 flex flex-col h-[520px] rounded-[6px] bg-black/90 border border-ron-violet/30 shadow-2xl backdrop-blur-2xl overflow-hidden">
-          {/* Header */}
-          <div className="p-3 bg-[#090A0E] border-b border-white/[0.08] flex items-center justify-between">
-            <div className="flex items-center gap-2 text-ron-cyan font-bold text-xs">
-              <Terminal className="w-3.5 h-3.5" />
-              <span>RON ASSISTANT</span>
-            </div>
-            <span className="text-ron-dim text-[10px]">STATE-AWARE V2.4</span>
-          </div>
-
-          {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5">
-            {messages.map((m, idx) => (
-              <div
-                key={idx}
-                className={`p-3 rounded-[4px] max-w-[92%] text-[11px] leading-relaxed ${
-                  m.sender === "USER"
-                    ? "ml-auto bg-ron-violet/20 border border-ron-violet/40 text-white"
-                    : "mr-auto surface-type-a text-ron-text"
-                }`}
-              >
-                <span className="mono-label text-[8.5px] font-bold block mb-1 text-ron-cyan">
-                  {m.sender === "USER" ? "OPERATOR" : "RON COGNITIVE CORE"}
-                </span>
-                <p className="font-sans text-[11px] leading-relaxed">{m.text}</p>
+            {/* Structured telemetry card block (if metrics present) */}
+            {m.metrics && (
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.06]">
+                {Object.entries(m.metrics).map(([k, v]) => (
+                  <div key={k} className="p-2 rounded-[4px] bg-black/60 border border-white/5">
+                    <span className="mono-label text-[8px] block text-ron-dim">{k}</span>
+                    <span className="text-xs font-bold text-white mono-data mt-0.5 block">{v}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
 
-            {isThinking && (
-              <div className="flex items-center gap-2 p-2 text-ron-cyan text-xs">
-                <span className="w-3 h-3 border-2 border-ron-cyan border-t-transparent rounded-full animate-spin" />
-                <span>Querying live consensus store...</span>
+            {/* Action CTA link (if present) */}
+            {m.cta && (
+              <div className="pt-2">
+                <Link
+                  href={m.cta.href}
+                  className="inline-flex items-center gap-1.5 text-ron-cyan hover:underline font-bold text-[11px]"
+                >
+                  <span>{m.cta.label}</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
               </div>
             )}
           </div>
+        ))}
 
-          {/* Input field */}
-          <div className="p-2.5 bg-[#090A0E] border-t border-white/[0.08] flex items-center gap-2">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleSendMessage(chatInput);
-              }}
-              placeholder="Ask 'Analyze my portfolio' or /network..."
-              className="w-full bg-black/60 border border-white/10 rounded-[4px] px-3 py-1.5 text-xs text-white placeholder-ron-muted focus:outline-none focus:border-ron-cyan font-mono"
-            />
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => handleSendMessage(chatInput)}
-              className="text-xs shrink-0 px-2.5"
-            >
-              <Send className="w-3 h-3 text-black" />
-            </Button>
+        {isThinking && (
+          <div className="flex items-center gap-2 p-3 surface-type-a text-ron-cyan text-xs rounded-[6px] max-w-xs">
+            <span className="w-3 h-3 border-2 border-ron-cyan border-t-transparent rounded-full animate-spin" />
+            <span>Scanning consensus state roots...</span>
           </div>
+        )}
+      </div>
+
+      {/* Fixed Bottom AI Query Bar (Thumb reachable on mobile) */}
+      <div className="fixed bottom-16 sm:bottom-0 left-0 right-0 p-3 bg-[#050507]/95 backdrop-blur-xl border-t border-white/[0.08] z-30">
+        <div className="max-w-2xl mx-auto flex items-center gap-2">
+          <input
+            type="text"
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSendMessage(chatInput);
+            }}
+            placeholder="Ask 'Analyze my portfolio' or /risk..."
+            className="w-full bg-black/80 border border-white/15 rounded-[6px] px-3.5 py-2.5 text-xs text-white placeholder-ron-muted focus:outline-none focus:border-ron-cyan font-mono"
+          />
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => handleSendMessage(chatInput)}
+            className="text-xs shrink-0 px-3.5"
+          >
+            <Send className="w-3.5 h-3.5 text-black" />
+          </Button>
         </div>
       </div>
     </div>
